@@ -10,6 +10,8 @@ const STEPS = [
 
 export function Tutorial() {
   const step = useGame(s => s.tutorialStep);
+  const phase = useGame(s => s.phase);
+  if (phase !== "playing") return null;
   if (step < 0 || step >= STEPS.length) return null;
   const s = STEPS[step];
   return (
