@@ -1,6 +1,15 @@
+import { useEffect, useState } from "react";
 import { GAME_CONFIG } from "@/game/config";
 import { selectors, useGame } from "@/game/store";
-import { Star } from "lucide-react";
+import { Star, Zap, Sparkles } from "lucide-react";
+
+/** Format ms → "M:SS". */
+function fmt(ms: number) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
 
 export function HUD() {
   const level = useGame(s => s.level);
@@ -8,10 +17,20 @@ export function HUD() {
   const xpNext = useGame(selectors.xpForNext);
   const combo = useGame(s => s.combo);
   const comboMult = useGame(s => s.comboMult);
-  const doubleActive = useGame(selectors.doubleActive);
-  const speedActive = useGame(selectors.speedActive);
+  const doubleUntil = useGame(s => s.doubleRewardsUntil);
+  const speedUntil = useGame(s => s.speedBoostUntil);
   const earnedToday = useGame(s => s.totalCoinsEarnedToday);
   const cap = GAME_CONFIG.DAILY_COIN_CAP;
+
+  // Tick every second so countdowns stay fresh.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const doubleActive = doubleUntil > now;
+  const speedActive = speedUntil > now;
 
   const pct = Math.min(100, (xp / xpNext) * 100);
   const capPct = Math.min(100, (earnedToday / cap) * 100);
@@ -40,7 +59,7 @@ export function HUD() {
         </div>
       </div>
 
-      {/* Combo + boosters */}
+      {/* Combo + booster timers */}
       <div className="flex items-center gap-2 flex-wrap">
         {combo >= 2 && (
           <span className="px-2 py-1 rounded-full bg-accent/20 text-accent font-bold text-xs animate-scale-in">
@@ -48,13 +67,13 @@ export function HUD() {
           </span>
         )}
         {doubleActive && (
-          <span className="px-2 py-1 rounded-full bg-gold-500/20 text-gold-300 font-bold text-xs">
-            2× Rewards
+          <span className="px-2 py-1 rounded-full bg-gold-500/20 text-gold-300 font-bold text-xs flex items-center gap-1 tabular-nums">
+            <Sparkles className="h-3 w-3" /> 2× {fmt(doubleUntil - now)}
           </span>
         )}
         {speedActive && (
-          <span className="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs">
-            ⚡ Speed Boost
+          <span className="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center gap-1 tabular-nums">
+            <Zap className="h-3 w-3" /> Speed {fmt(speedUntil - now)}
           </span>
         )}
       </div>
