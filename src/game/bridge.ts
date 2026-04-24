@@ -5,6 +5,7 @@
 //   showRewardedAd(callback?: string): void  // optional
 //   saveGameData(json: string): void
 //   loadGameData(): string | null
+//   closeApp(): void                          // optional
 // We provide safe fallbacks so the game runs in any browser.
 // =====================================================
 
@@ -15,6 +16,7 @@ declare global {
       showRewardedAd?: (callbackName?: string) => void;
       saveGameData?: (json: string) => void;
       loadGameData?: () => string | null;
+      closeApp?: () => void;
     };
     __goldMergeAdCallback?: (success: boolean) => void;
     onRewardedAdResult?: (success: boolean) => void;
@@ -83,5 +85,29 @@ export function loadGameData<T = unknown>(): T | null {
   } catch (e) {
     console.warn("loadGameData failed", e);
     return null;
+  }
+}
+
+/**
+ * Close the game / return control to the host Gold Coin app.
+ * Falls back to history.back() then window.close() in browser.
+ */
+export function closeApp(): void {
+  try {
+    if (window.GoldCoinBridge?.closeApp) {
+      window.GoldCoinBridge.closeApp();
+      return;
+    }
+  } catch (e) {
+    console.warn("closeApp failed", e);
+  }
+  try {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.close();
+    }
+  } catch {
+    // no-op
   }
 }
