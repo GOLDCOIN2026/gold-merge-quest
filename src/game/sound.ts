@@ -49,6 +49,13 @@ export const SFX = {
   levelUp() {
     [523, 659, 784, 988, 1175].forEach((f, i) => setTimeout(() => tone(f, 0.13, "triangle", 0.18), i * 70));
   },
+  click() { tone(720, 0.04, "square", 0.08); },
+  sell() {
+    [880, 1175, 1568].forEach((f, i) => setTimeout(() => tone(f, 0.1, "triangle", 0.16), i * 60));
+  },
+  boost() {
+    [392, 587, 784].forEach((f, i) => setTimeout(() => tone(f, 0.1, "sawtooth", 0.12, 200), i * 50));
+  },
 };
 
 export function setMuted(m: boolean) { muted = m; }
