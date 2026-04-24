@@ -1,16 +1,83 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect } from "react";
+import { Volume2, VolumeX } from "lucide-react";
+import { Board } from "@/components/game/Board";
+import { CoinCounter } from "@/components/game/CoinCounter";
+import { HUD } from "@/components/game/HUD";
+import { ActionBar } from "@/components/game/ActionBar";
+import { MissionsPanel } from "@/components/game/MissionsPanel";
+import { BannerStack } from "@/components/game/BannerStack";
+import { AchievementsButton } from "@/components/game/AchievementsButton";
+import { DailyRewardButton } from "@/components/game/DailyRewardButton";
+import { Tutorial } from "@/components/game/Tutorial";
+import { autoSpawnTick, comboTick, loadFromStorage, setMuted, useGame } from "@/game/store";
+import { setMuted as setSfxMuted, unlockAudio } from "@/game/sound";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const muted = useGame(s => s.muted);
+
+  // Boot — load saved state once.
+  useEffect(() => { loadFromStorage(); }, []);
+
+  // Sync muted state to SFX engine
+  useEffect(() => { setSfxMuted(muted); }, [muted]);
+
+  // Game loop ticks
+  useEffect(() => {
+    const spawn = window.setInterval(autoSpawnTick, 500);
+    const combo = window.setInterval(comboTick, 500);
+    return () => { clearInterval(spawn); clearInterval(combo); };
+  }, []);
+
+  // Unlock audio on first interaction
+  useEffect(() => {
+    const onTouch = () => { unlockAudio(); window.removeEventListener("pointerdown", onTouch); };
+    window.addEventListener("pointerdown", onTouch);
+    return () => window.removeEventListener("pointerdown", onTouch);
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <main className="relative min-h-screen w-full px-3 py-3 max-w-[640px] mx-auto flex flex-col gap-3">
+      {/* Top bar */}
+      <header className="flex items-center justify-between gap-2 z-10">
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg sm:text-xl font-extrabold text-gold tracking-tight">
+            Gold Merge Boss
+          </h1>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <DailyRewardButton />
+          <AchievementsButton />
+          <button
+            onClick={() => setMuted(!muted)}
+            className="panel-gold h-10 w-10 rounded-full flex items-center justify-center"
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold-300" />}
+          </button>
+        </div>
+      </header>
+
+      {/* Coins + HUD */}
+      <section className="flex items-stretch gap-2">
+        <div className="flex-1"><HUD /></div>
+        <div className="self-start"><CoinCounter /></div>
+      </section>
+
+      {/* Board */}
+      <section className="z-10">
+        <Board />
+      </section>
+
+      {/* Action bar */}
+      <section className="z-10"><ActionBar /></section>
+
+      {/* Missions */}
+      <section className="z-10 pb-3"><MissionsPanel /></section>
+
+      <BannerStack />
+      <Tutorial />
+    </main>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
