@@ -15,11 +15,8 @@ import { setMuted as setSfxMuted, unlockAudio } from "@/game/sound";
 const Index = () => {
   const muted = useGame(s => s.muted);
 
-  // Boot
-  useEffect(() => {
-    loadFromStorage();
-    setSfxMuted(useGame.length === 0 ? false : false); // sync muted from store on next render
-  }, []);
+  // Boot — load saved state once.
+  useEffect(() => { loadFromStorage(); }, []);
 
   // Sync muted state to SFX engine
   useEffect(() => { setSfxMuted(muted); }, [muted]);
