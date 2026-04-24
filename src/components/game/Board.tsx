@@ -131,6 +131,7 @@ export function Board() {
             const isHover = hoverCell === idx && drag && idx !== drag.from;
             const isMergeable = isMergeTarget(idx);
             const isDragSource = drag?.from === idx;
+            const isSelected = selectedCell === idx && !drag;
             return (
               <div
                 key={idx}
@@ -141,6 +142,7 @@ export function Board() {
                   "tile-base relative rounded-xl flex items-center justify-center",
                   isHover && !tile && "tile-droptarget",
                   isMergeable && "tile-mergeable",
+                  isSelected && "tile-selected",
                   tile && "tile-filled",
                 )}
               >
