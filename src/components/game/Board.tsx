@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from "react";
+import { useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import { GAME_CONFIG } from "@/game/config";
-import { dropTile, snapshotForUndo, useGame, type Tile } from "@/game/store";
+import { dropTile, selectCell, snapshotForUndo, useGame, type Tile } from "@/game/store";
 import { getItem } from "@/game/items";
 import { SFX } from "@/game/sound";
 import { cn } from "@/lib/utils";
 
 const SIZE = GAME_CONFIG.BOARD_SIZE;
+// Distance in px before we treat the gesture as a drag (vs a tap).
+const DRAG_THRESHOLD = 6;
 
 interface DragState {
   from: number;
@@ -21,10 +23,16 @@ export function Board() {
   const board = useGame(s => s.board);
   const floats = useGame(s => s.floats);
   const particles = useGame(s => s.particles);
+  const selectedCell = useGame(s => s.selectedCell);
+  const phase = useGame(s => s.phase);
   const containerRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [hoverCell, setHoverCell] = useState<number | null>(null);
+  // Track potential tap source (set on pointerdown, cleared if drag begins).
+  const tapSourceRef = useRef<{ idx: number; x: number; y: number; pointerId: number } | null>(null);
+
+  const interactive = phase === "playing";
 
   function cellFromPoint(x: number, y: number): number | null {
     const el = document.elementFromPoint(x, y);
@@ -36,37 +44,65 @@ export function Board() {
   }
 
   function onPointerDown(e: RPointerEvent<HTMLDivElement>, idx: number) {
+    if (!interactive) return;
     const tile = board[idx];
-    if (!tile) return;
+    if (!tile) {
+      // Tap on empty cell clears selection
+      selectCell(null);
+      return;
+    }
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    tapSourceRef.current = { idx, x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+  }
+
+  function onPointerMove(e: RPointerEvent<HTMLDivElement>) {
+    // If we already started dragging, just update positions.
+    if (drag && e.pointerId === drag.pointerId) {
+      setDrag(d => d ? { ...d, x: e.clientX, y: e.clientY } : d);
+      const cell = cellFromPoint(e.clientX, e.clientY);
+      setHoverCell(cell);
+      return;
+    }
+    // Otherwise, check if pointer has moved enough to begin a drag.
+    const tap = tapSourceRef.current;
+    if (!tap || tap.pointerId !== e.pointerId) return;
+    const dx = e.clientX - tap.x;
+    const dy = e.clientY - tap.y;
+    if (dx * dx + dy * dy < DRAG_THRESHOLD * DRAG_THRESHOLD) return;
+    const tile = board[tap.idx];
+    if (!tile) { tapSourceRef.current = null; return; }
     SFX.pickup();
     snapshotForUndo();
     setDrag({
-      from: idx,
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
+      from: tap.idx,
+      pointerId: tap.pointerId,
+      startX: tap.x,
+      startY: tap.y,
       x: e.clientX,
       y: e.clientY,
       ghostLevel: tile.level,
     });
-  }
-
-  function onPointerMove(e: RPointerEvent<HTMLDivElement>) {
-    if (!drag || e.pointerId !== drag.pointerId) return;
-    setDrag(d => d ? { ...d, x: e.clientX, y: e.clientY } : d);
-    const cell = cellFromPoint(e.clientX, e.clientY);
-    setHoverCell(cell);
+    tapSourceRef.current = null;
   }
 
   function endDrag(e: RPointerEvent<HTMLDivElement>) {
-    if (!drag || e.pointerId !== drag.pointerId) return;
-    const cell = cellFromPoint(e.clientX, e.clientY);
-    if (cell != null && cell !== drag.from) {
-      dropTile(drag.from, cell);
+    // Drag end → drop logic.
+    if (drag && e.pointerId === drag.pointerId) {
+      const cell = cellFromPoint(e.clientX, e.clientY);
+      if (cell != null && cell !== drag.from) {
+        dropTile(drag.from, cell);
+      }
+      setDrag(null);
+      setHoverCell(null);
+      return;
     }
-    setDrag(null);
-    setHoverCell(null);
+    // No drag started → treat as a tap (selection toggle).
+    const tap = tapSourceRef.current;
+    if (tap && tap.pointerId === e.pointerId) {
+      selectCell(tap.idx);
+      SFX.click();
+    }
+    tapSourceRef.current = null;
   }
 
   // Compute mergeable highlight
