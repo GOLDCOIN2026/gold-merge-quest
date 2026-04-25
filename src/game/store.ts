@@ -891,12 +891,24 @@ export const selectors = {
     if (s.selectedCell == null) return null;
     return s.board[s.selectedCell];
   },
-  /** Categories currently present on the board. */
-  activeCategories: (s: GameState): CategoryId[] => {
-    const set = new Set<CategoryId>();
-    s.board.forEach(t => { if (t) set.add(t.category); });
-    return CATEGORY_IDS.filter(c => set.has(c));
-  },
+  /** Categories currently present on the board. Memoized by board reference + content key. */
+  activeCategories: (() => {
+    let lastBoard: GameState["board"] | null = null;
+    let lastKey = "";
+    let lastResult: CategoryId[] = [];
+    return (s: GameState): CategoryId[] => {
+      if (s.board === lastBoard) return lastResult;
+      const set = new Set<CategoryId>();
+      s.board.forEach(t => { if (t) set.add(t.category); });
+      const key = CATEGORY_IDS.filter(c => set.has(c)).join(",");
+      if (key !== lastKey) {
+        lastKey = key;
+        lastResult = key ? (key.split(",") as CategoryId[]) : [];
+      }
+      lastBoard = s.board;
+      return lastResult;
+    };
+  })(),
 };
 
 export { ITEMS, MAX_LEVEL, getItem, getState };
