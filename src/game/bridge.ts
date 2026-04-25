@@ -2,10 +2,11 @@
 // Native Android WebView bridge
 // The native side may inject `window.GoldCoinBridge` exposing:
 //   rewardCoins(amount: number): void
-//   showRewardedAd(callback?: string): void  // optional
+//   showRewardedAd(callback?: string): void
 //   saveGameData(json: string): void
 //   loadGameData(): string | null
-//   closeApp(): void                          // optional
+//   closeApp(): void
+//   getReferralCount(): number          // optional
 // We provide safe fallbacks so the game runs in any browser.
 // =====================================================
 
@@ -17,15 +18,16 @@ declare global {
       saveGameData?: (json: string) => void;
       loadGameData?: () => string | null;
       closeApp?: () => void;
+      getReferralCount?: () => number;
     };
     __goldMergeAdCallback?: (success: boolean) => void;
     onRewardedAdResult?: (success: boolean) => void;
   }
 }
 
-const STORAGE_KEY = "goldMergeBoss_save_v1";
+const STORAGE_KEY = "goldMergeBoss_save_v2";
 
-/** Award coins to the host wallet (Gold Coin app). Falls back to no-op. */
+/** Award coins/tokens to the host wallet (Gold Coin app). */
 export function rewardCoins(amount: number): void {
   if (amount <= 0) return;
   try {
@@ -45,7 +47,6 @@ export function showRewardedAd(): Promise<boolean> {
   return new Promise((resolve) => {
     const native = window.GoldCoinBridge?.showRewardedAd;
     if (native) {
-      // Native side calls window.onRewardedAdResult(success)
       window.onRewardedAdResult = (success: boolean) => {
         resolve(!!success);
         window.onRewardedAdResult = undefined;
@@ -57,7 +58,7 @@ export function showRewardedAd(): Promise<boolean> {
         resolve(false);
       }
     } else {
-      // Browser fallback — simulate a 1.2s ad
+      // Browser fallback — simulate a short successful ad
       setTimeout(() => resolve(true), 1200);
     }
   });
@@ -89,9 +90,20 @@ export function loadGameData<T = unknown>(): T | null {
 }
 
 /**
- * Close the game / return control to the host Gold Coin app.
- * Falls back to history.back() then window.close() in browser.
+ * Read the player's total successful referral count from the host app.
+ * Returns 0 if the bridge isn't injected.
  */
+export function getReferralCount(): number {
+  try {
+    const n = window.GoldCoinBridge?.getReferralCount?.();
+    if (typeof n === "number" && Number.isFinite(n) && n >= 0) return Math.floor(n);
+  } catch (e) {
+    console.warn("getReferralCount failed", e);
+  }
+  return 0;
+}
+
+/** Close the game / return control to the host Gold Coin app. */
 export function closeApp(): void {
   try {
     if (window.GoldCoinBridge?.closeApp) {
@@ -102,11 +114,8 @@ export function closeApp(): void {
     console.warn("closeApp failed", e);
   }
   try {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.close();
-    }
+    if (window.history.length > 1) window.history.back();
+    else window.close();
   } catch {
     // no-op
   }

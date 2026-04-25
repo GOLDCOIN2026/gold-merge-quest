@@ -1,21 +1,16 @@
 // =====================================================
 // GOLD MERGE BOSS — Tunable game configuration
-// All economy values configurable via JS variables.
 // =====================================================
 
 export const GAME_CONFIG = {
   BOARD_SIZE: 6,
 
-  // ---- Auto item generation (progressive schedule) ----
-  // 1st spawn after 10s, 2nd after +15s, 3rd after +20s, +5s each subsequent
-  AUTO_SPAWN_FIRST_DELAY_MS: 10_000,
-  AUTO_SPAWN_STEP_MS: 5_000,
-  AUTO_SPAWN_MAX_INTERVAL_MS: 60_000, // hard cap so it doesn't get absurd
-  AUTO_SPAWN_MAX_LEVEL: 2,
-
-  // Generator button (manual)
-  GENERATOR_COST_COINS: 0,
-  GENERATOR_COOLDOWN_MS: 800,
+  // ---- Auto item generation (progressive cycle) ----
+  // 1st spawn: 5s, 2nd: 6s, 3rd: 7s, ... 36th: 40s, then resets to 5s.
+  AUTO_SPAWN_FIRST_DELAY_MS: 5_000,
+  AUTO_SPAWN_STEP_MS: 1_000,
+  AUTO_SPAWN_CYCLE_LENGTH: 36, // resets after this many spawns
+  AUTO_SPAWN_MAX_LEVEL: 2,     // newly spawned tiles are level 1 or 2
 
   // Combo system
   COMBO_WINDOW_MS: 2500,
@@ -23,31 +18,45 @@ export const GAME_CONFIG = {
 
   // XP / level
   XP_PER_MERGE: (level: number) => level * 5,
-  XP_TO_NEXT: (lvl: number) => Math.round(80 * Math.pow(1.35, lvl - 1)),
+  XP_TO_NEXT: (lvl: number) => Math.round(80 * Math.pow(1.32, lvl - 1)),
 
-  // Daily cap
+  // Daily Coin earnings cap (coins, separate from sell tokens)
   DAILY_COIN_CAP: 5000,
 
-  // Boosters — duration & multipliers
-  DOUBLE_REWARDS_DURATION_MS: 10 * 60 * 1000, // 10 minutes
-  SPEED_BOOST_MULTIPLIER: 2,                  // doubles spawn speed
-  SPEED_BOOST_DURATION_MS: 10 * 60 * 1000,    // 10 minutes
+  // ---- Speed Boost ----
+  // Doubles spawn rate (halves intervals) for 2 minutes.
+  SPEED_BOOST_MULTIPLIER: 2,
+  SPEED_BOOST_DURATION_MS: 2 * 60 * 1000,
 
-  // Daily reward (coins)
+  // Daily double-rewards booster (kept from previous build)
+  DOUBLE_REWARDS_DURATION_MS: 10 * 60 * 1000,
+
+  // ---- Refill system ----
+  DAILY_AD_REFILLS: 2,         // first 2 refills/day via ads
+  REFILL_BATCH_LEVEL_1_PROB: 0.85, // probability a refilled tile is level 1 vs 2
+
+  // ---- Daily login reward ----
   DAILY_REWARD_COINS: 250,
 
-  // Selling — Golden Crown (level 7) → Gold Coins
-  SELL_REWARD_BY_LEVEL: { 7: 1 } as Record<number, number>,
+  // ---- Sell rewards (Gold Coin Tokens) ----
+  // Levels 1-5 are not sellable.
+  SELL_TOKEN_REWARD_BY_LEVEL: {
+    6: 10,
+    7: 15,
+    8: 30,
+    9: 50,
+    10: 100,
+  } as Record<number, number>,
 };
 
 export type GameConfig = typeof GAME_CONFIG;
 
 /**
- * Returns the delay (ms) before the Nth automatic spawn:
- *   index 0 → 10s, 1 → 15s, 2 → 20s, 3 → 25s, +5s each subsequent.
+ * Returns the delay (ms) before the Nth auto-spawn within the current cycle.
+ *   index 0 → 5s, 1 → 6s, ..., 35 → 40s. After index 35 the engine resets
+ *   the cycle counter to 0, restarting at 5s.
  */
 export function spawnIntervalForIndex(index: number): number {
-  const ms =
-    GAME_CONFIG.AUTO_SPAWN_FIRST_DELAY_MS + index * GAME_CONFIG.AUTO_SPAWN_STEP_MS;
-  return Math.min(ms, GAME_CONFIG.AUTO_SPAWN_MAX_INTERVAL_MS);
+  const within = index % GAME_CONFIG.AUTO_SPAWN_CYCLE_LENGTH;
+  return GAME_CONFIG.AUTO_SPAWN_FIRST_DELAY_MS + within * GAME_CONFIG.AUTO_SPAWN_STEP_MS;
 }
