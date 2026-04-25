@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { GAME_CONFIG } from "@/game/config";
+import { GAME_CONFIG, spawnIntervalForIndex } from "@/game/config";
 import { selectors, useGame } from "@/game/store";
-import { Star, Zap, Sparkles } from "lucide-react";
+import { CATEGORIES, CATEGORY_IDS } from "@/game/items";
+import { Star, Zap, Sparkles, Timer, Repeat, Users } from "lucide-react";
 
 /** Format ms → "M:SS". */
 function fmt(ms: number) {
@@ -21,11 +22,18 @@ export function HUD() {
   const speedUntil = useGame(s => s.speedBoostUntil);
   const earnedToday = useGame(s => s.totalCoinsEarnedToday);
   const cap = GAME_CONFIG.DAILY_COIN_CAP;
+  const phase = useGame(s => s.phase);
+  const nextSpawnAt = useGame(s => s.nextSpawnAt);
+  const spawnIndex = useGame(s => s.spawnIndex);
+  const cyclePosition = useGame(s => s.cyclePosition);
+  const refillsUsedToday = useGame(s => s.refillsUsedToday);
+  const referralCredits = useGame(s => s.referralRefillCredits);
+  const activeCategories = useGame(selectors.activeCategories);
 
   // Tick every second so countdowns stay fresh.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    const id = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(id);
   }, []);
 
@@ -34,6 +42,20 @@ export function HUD() {
 
   const pct = Math.min(100, (xp / xpNext) * 100);
   const capPct = Math.min(100, (earnedToday / cap) * 100);
+
+  // Spawn timer countdown — only meaningful while playing.
+  const spawnCountdownMs = phase === "playing" && nextSpawnAt > 0
+    ? Math.max(0, nextSpawnAt - now)
+    : 0;
+  const cycleLen = GAME_CONFIG.AUTO_SPAWN_CYCLE_LENGTH;
+  const cycleSlot = (cyclePosition % cycleLen) + 1; // 1-based for display
+  // The interval *for* the upcoming spawn (i.e. the one currently counting down).
+  const upcomingInterval = spawnIntervalForIndex(spawnIndex);
+  const spawnPct = upcomingInterval > 0
+    ? Math.min(100, ((upcomingInterval - spawnCountdownMs) / upcomingInterval) * 100)
+    : 0;
+
+  const adRefillsLeft = Math.max(0, GAME_CONFIG.DAILY_AD_REFILLS - refillsUsedToday);
 
   return (
     <div className="panel-gold rounded-2xl p-3 space-y-2 text-sm">
@@ -59,7 +81,46 @@ export function HUD() {
         </div>
       </div>
 
-      {/* Combo + booster timers */}
+      {/* Spawn timer + cycle position */}
+      <div className="rounded-xl bg-secondary/40 p-2">
+        <div className="flex justify-between items-center text-[11px] text-muted-foreground mb-1">
+          <span className="flex items-center gap-1">
+            <Timer className="h-3 w-3 text-gold-300" />
+            Next spawn {phase === "playing" ? `in ${(spawnCountdownMs / 1000).toFixed(1)}s` : "—"}
+          </span>
+          <span className="tabular-nums">Cycle {cycleSlot}/{cycleLen}</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-background overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 transition-all"
+            style={{ width: `${spawnPct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Active categories on board */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {CATEGORY_IDS.map(id => {
+          const c = CATEGORIES[id];
+          const active = activeCategories.includes(id);
+          return (
+            <span
+              key={id}
+              className="px-2 py-0.5 text-[10px] font-bold rounded-full transition-opacity"
+              style={{
+                background: active ? c.glow : "transparent",
+                border: `1px solid ${c.hue}`,
+                color: c.hue,
+                opacity: active ? 1 : 0.4,
+              }}
+            >
+              {c.name}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Combo + booster timers + refill credits */}
       <div className="flex items-center gap-2 flex-wrap">
         {combo >= 2 && (
           <span className="px-2 py-1 rounded-full bg-accent/20 text-accent font-bold text-xs animate-scale-in">
@@ -76,6 +137,12 @@ export function HUD() {
             <Zap className="h-3 w-3" /> Speed {fmt(speedUntil - now)}
           </span>
         )}
+        <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
+          <Repeat className="h-3 w-3 text-gold-300" /> {adRefillsLeft}/2
+        </span>
+        <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
+          <Users className="h-3 w-3 text-emerald-300" /> {referralCredits}
+        </span>
       </div>
 
       {/* Daily cap */}
