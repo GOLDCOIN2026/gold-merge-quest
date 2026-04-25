@@ -1,12 +1,11 @@
 import { useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import { GAME_CONFIG } from "@/game/config";
-import { dropTile, selectCell, snapshotForUndo, useGame, type Tile } from "@/game/store";
-import { getItem } from "@/game/items";
+import { dropTile, selectCell, useGame, type Tile } from "@/game/store";
+import { getItem, getCategory, MAX_LEVEL } from "@/game/items";
 import { SFX } from "@/game/sound";
 import { cn } from "@/lib/utils";
 
 const SIZE = GAME_CONFIG.BOARD_SIZE;
-// Distance in px before we treat the gesture as a drag (vs a tap).
 const DRAG_THRESHOLD = 6;
 
 interface DragState {
@@ -16,7 +15,7 @@ interface DragState {
   startY: number;
   x: number;
   y: number;
-  ghostLevel: number;
+  ghost: Tile;
 }
 
 export function Board() {
@@ -29,7 +28,6 @@ export function Board() {
   const cellRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [hoverCell, setHoverCell] = useState<number | null>(null);
-  // Track potential tap source (set on pointerdown, cleared if drag begins).
   const tapSourceRef = useRef<{ idx: number; x: number; y: number; pointerId: number } | null>(null);
 
   const interactive = phase === "playing";
@@ -47,7 +45,6 @@ export function Board() {
     if (!interactive) return;
     const tile = board[idx];
     if (!tile) {
-      // Tap on empty cell clears selection
       selectCell(null);
       return;
     }
@@ -56,14 +53,12 @@ export function Board() {
   }
 
   function onPointerMove(e: RPointerEvent<HTMLDivElement>) {
-    // If we already started dragging, just update positions.
     if (drag && e.pointerId === drag.pointerId) {
       setDrag(d => d ? { ...d, x: e.clientX, y: e.clientY } : d);
       const cell = cellFromPoint(e.clientX, e.clientY);
       setHoverCell(cell);
       return;
     }
-    // Otherwise, check if pointer has moved enough to begin a drag.
     const tap = tapSourceRef.current;
     if (!tap || tap.pointerId !== e.pointerId) return;
     const dx = e.clientX - tap.x;
@@ -72,7 +67,6 @@ export function Board() {
     const tile = board[tap.idx];
     if (!tile) { tapSourceRef.current = null; return; }
     SFX.pickup();
-    snapshotForUndo();
     setDrag({
       from: tap.idx,
       pointerId: tap.pointerId,
@@ -80,13 +74,12 @@ export function Board() {
       startY: tap.y,
       x: e.clientX,
       y: e.clientY,
-      ghostLevel: tile.level,
+      ghost: tile,
     });
     tapSourceRef.current = null;
   }
 
   function endDrag(e: RPointerEvent<HTMLDivElement>) {
-    // Drag end → drop logic.
     if (drag && e.pointerId === drag.pointerId) {
       const cell = cellFromPoint(e.clientX, e.clientY);
       if (cell != null && cell !== drag.from) {
@@ -96,7 +89,6 @@ export function Board() {
       setHoverCell(null);
       return;
     }
-    // No drag started → treat as a tap (selection toggle).
     const tap = tapSourceRef.current;
     if (tap && tap.pointerId === e.pointerId) {
       selectCell(tap.idx);
@@ -105,12 +97,14 @@ export function Board() {
     tapSourceRef.current = null;
   }
 
-  // Compute mergeable highlight
   const ghostTile: Tile | null = drag ? board[drag.from] : null;
   const isMergeTarget = (idx: number) => {
     if (!ghostTile || hoverCell !== idx) return false;
     const t = board[idx];
-    return !!t && t.level === ghostTile.level && t.level < 7;
+    return !!t
+      && t.category === ghostTile.category
+      && t.level === ghostTile.level
+      && t.level < MAX_LEVEL;
   };
 
   return (
@@ -121,7 +115,6 @@ export function Board() {
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
     >
-      {/* Board frame */}
       <div className="absolute inset-0 rounded-3xl panel-gold p-2 sm:p-3 shadow-popup">
         <div
           className="grid gap-1.5 sm:gap-2 h-full"
@@ -147,13 +140,13 @@ export function Board() {
                 )}
               >
                 {tile && !isDragSource && <TileVisual tile={tile} />}
-                {/* Float texts */}
                 {floats.filter(f => f.cell === idx).map(f => (
                   <span
                     key={f.id}
                     className={cn(
                       "absolute pointer-events-none font-bold text-sm sm:text-base animate-float-up z-30 drop-shadow-lg",
                       f.variant === "coin" && "text-gold-300",
+                      f.variant === "token" && "text-emerald-300",
                       f.variant === "combo" && "text-accent",
                       f.variant === "xp" && "text-cyan-300",
                     )}
@@ -161,9 +154,8 @@ export function Board() {
                     {f.text}
                   </span>
                 ))}
-                {/* Particles */}
                 {particles.filter(p => p.cell === idx).map(p => (
-                  <ParticleBurst key={p.id} level={p.level} />
+                  <ParticleBurst key={p.id} category={p.category} level={p.level} />
                 ))}
               </div>
             );
@@ -171,7 +163,6 @@ export function Board() {
         </div>
       </div>
 
-      {/* Drag ghost */}
       {drag && (
         <div
           className="fixed pointer-events-none z-50 tile-dragging rounded-xl"
@@ -183,7 +174,7 @@ export function Board() {
             transform: "translate(-50%, -50%) scale(1.15)",
           }}
         >
-          <TileVisual tile={{ id: "ghost", level: drag.ghostLevel, bornAt: 0 }} />
+          <TileVisual tile={drag.ghost} />
         </div>
       )}
     </div>
@@ -191,13 +182,21 @@ export function Board() {
 }
 
 function TileVisual({ tile }: { tile: Tile }) {
-  const item = getItem(tile.level);
+  const item = getItem(tile.category, tile.level);
+  const cat = getCategory(tile.category);
   const fresh = Date.now() - tile.bornAt < 500;
   return (
-    <div className={cn(
-      "relative w-full h-full flex items-center justify-center p-1",
-      fresh && "animate-spawn",
-    )}>
+    <div
+      className={cn(
+        "relative w-full h-full flex items-center justify-center p-1",
+        fresh && "animate-spawn",
+      )}
+      style={{
+        // Faint category-tinted aura behind the icon
+        background: `radial-gradient(circle at 50% 55%, ${cat.glow}, transparent 65%)`,
+        borderRadius: "0.6rem",
+      }}
+    >
       <img
         src={item.image}
         alt={item.name}
@@ -205,6 +204,14 @@ function TileVisual({ tile }: { tile: Tile }) {
         draggable={false}
         className="w-full h-full object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] pointer-events-none"
       />
+      {/* Category chip (top-left) */}
+      <span
+        className="absolute top-0.5 left-0.5 px-1 py-px rounded-md text-[8px] font-extrabold tracking-tight uppercase leading-none"
+        style={{ background: cat.hue, color: "#0b0b0b" }}
+      >
+        {cat.short}
+      </span>
+      {/* Level chip (bottom-right) */}
       <span className="absolute bottom-0.5 right-1 text-[9px] sm:text-[10px] font-bold text-gold-200 tabular-nums drop-shadow">
         {tile.level}
       </span>
@@ -212,7 +219,8 @@ function TileVisual({ tile }: { tile: Tile }) {
   );
 }
 
-function ParticleBurst({ level }: { level: number }) {
+function ParticleBurst({ category, level }: { category: Tile["category"]; level: number }) {
+  const cat = getCategory(category);
   const particles = Array.from({ length: 8 + level }, (_, i) => i);
   return (
     <div className="absolute inset-0 pointer-events-none z-20">
@@ -224,11 +232,12 @@ function ParticleBurst({ level }: { level: number }) {
         return (
           <span
             key={i}
-            className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-gold-300 animate-particle"
+            className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full animate-particle"
             style={{
               ["--px" as string]: `${px}px`,
               ["--py" as string]: `${py}px`,
-              boxShadow: "0 0 8px hsl(var(--gold-300))",
+              background: cat.hue,
+              boxShadow: `0 0 8px ${cat.hue}`,
             }}
           />
         );
