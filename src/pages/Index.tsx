@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Board } from "@/components/game/Board";
-import { CoinCounter } from "@/components/game/CoinCounter";
+import { CoinCounter, TokenCounter } from "@/components/game/CoinCounter";
 import { HUD } from "@/components/game/HUD";
 import { ActionBar } from "@/components/game/ActionBar";
 import { MissionsPanel } from "@/components/game/MissionsPanel";
@@ -18,6 +18,7 @@ import {
   loadFromStorage,
   persistNow,
   setMuted,
+  syncReferralCredits,
   useGame,
 } from "@/game/store";
 import { setMuted as setSfxMuted, unlockAudio } from "@/game/sound";
@@ -34,7 +35,7 @@ const Index = () => {
 
   // Game loop ticks
   useEffect(() => {
-    const spawn = window.setInterval(autoSpawnTick, 500);
+    const spawn = window.setInterval(autoSpawnTick, 250);
     const combo = window.setInterval(comboTick, 500);
     return () => { clearInterval(spawn); clearInterval(combo); };
   }, []);
@@ -46,13 +47,15 @@ const Index = () => {
     return () => window.removeEventListener("pointerdown", onTouch);
   }, []);
 
-  // Save before unload (back button, app close, navigation away)
+  // Save before unload + sync referrals on resume
   useEffect(() => {
     const onHide = () => persistNow();
+    const onShow = () => syncReferralCredits();
     window.addEventListener("pagehide", onHide);
     window.addEventListener("beforeunload", onHide);
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") persistNow();
+      else onShow();
     });
     return () => {
       window.removeEventListener("pagehide", onHide);
@@ -67,7 +70,7 @@ const Index = () => {
         <header className="flex items-center justify-between gap-2 z-10 animate-fade-in">
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="text-base sm:text-lg font-extrabold text-gold tracking-tight truncate">
-              Gold Merge Boss
+              Gold Coin Merge Quest
             </h1>
           </div>
           <div className="flex items-center gap-1.5">
@@ -85,11 +88,14 @@ const Index = () => {
         </header>
       )}
 
-      {/* Coins + HUD */}
+      {/* Coin + Token counters */}
       {phase !== "menu" && (
         <section className="flex items-stretch gap-2 animate-fade-in">
           <div className="flex-1"><HUD /></div>
-          <div className="self-start"><CoinCounter /></div>
+          <div className="flex flex-col gap-1.5 self-start">
+            <CoinCounter />
+            <TokenCounter />
+          </div>
         </section>
       )}
 
