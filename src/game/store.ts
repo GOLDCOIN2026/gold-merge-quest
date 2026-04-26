@@ -68,9 +68,10 @@ export interface BannerMsg {
   variant: "achievement" | "level" | "reward" | "combo";
 }
 
-/** Tracks whether each per-day free use is still available. */
+/** Tracks per-day free / capped uses. */
 export interface DailyFreeUses {
-  speedBoost: boolean;
+  speedBoost: boolean;       // 1 free speed boost/day
+  speedBoostAdUses: number;  // ad-based speed boost uses today (cap = 3)
 }
 
 export interface GameState {
