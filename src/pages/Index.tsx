@@ -71,38 +71,40 @@ const Index = () => {
       {/* ---- Top bar (sticky, always above board) ---- */}
       {phase !== "menu" && (
         <header className="sticky top-0 -mx-3 px-3 pt-3 pb-2 z-40 backdrop-blur-md bg-background/70 animate-fade-in border-b border-gold-700/20">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <h1 className="text-base sm:text-lg font-extrabold text-gold tracking-tight truncate">
-                Gold Coin Merge Quest
-              </h1>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
-              <MenuBar />
-              <InviteButton />
-              <LeaderboardButton />
-              <DailyRewardButton />
-              <AchievementsButton />
-              <button
-                onClick={() => setMuted(!muted)}
-                className="panel-gold h-10 w-10 rounded-full flex items-center justify-center"
-                aria-label={muted ? "Unmute" : "Mute"}
-              >
-                {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold-300" />}
-              </button>
-            </div>
+          {/* Title centered */}
+          <h1 className="text-base sm:text-lg font-extrabold text-gold tracking-tight text-center mb-2 truncate">
+            GOLD COIN MERGE QUEST
+          </h1>
+          {/* Action icons — exactly 4 per row */}
+          <div className="grid grid-cols-4 gap-1.5 justify-items-center">
+            <MenuBar />
+            <InviteButton />
+            <LeaderboardButton />
+            <DailyRewardButton />
+            <AchievementsButton />
+            <button
+              onClick={() => setMuted(!muted)}
+              className="panel-gold h-10 w-10 rounded-full flex items-center justify-center"
+              aria-label={muted ? "Unmute" : "Mute"}
+            >
+              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold-300" />}
+            </button>
           </div>
         </header>
       )}
 
-      {/* Coin + Token counters */}
+      {/* Balance (left) + Diamonds (right) — only these 2 */}
       {phase !== "menu" && (
-        <section className="flex items-stretch gap-2 z-20 animate-fade-in">
-          <div className="flex-1"><HUD /></div>
-          <div className="flex flex-col gap-1.5 self-start">
-            <CoinCounter />
-            <TokenCounter />
-          </div>
+        <section className="flex items-center justify-between gap-2 z-20 animate-fade-in">
+          <CoinCounter />
+          <TokenCounter />
+        </section>
+      )}
+
+      {/* XP + spawn HUD */}
+      {phase !== "menu" && (
+        <section className="z-20 animate-fade-in">
+          <HUD />
         </section>
       )}
 

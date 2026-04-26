@@ -40,26 +40,22 @@ export function MenuBar() {
 
   return (
     <>
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={togglePause}
-          className="panel-gold h-10 px-3 rounded-full flex items-center gap-1.5 text-xs font-semibold hover:shadow-gold transition-shadow"
-          aria-label={phase === "paused" ? "Resume" : "Pause"}
-        >
-          {phase === "paused"
-            ? <Play className="h-4 w-4 text-gold-300" fill="currentColor" />
-            : <Pause className="h-4 w-4 text-gold-300" fill="currentColor" />}
-          <span className="hidden xs:inline">{phase === "paused" ? "Resume" : "Pause"}</span>
-        </button>
-        <button
-          onClick={askQuit}
-          className="panel-gold h-10 px-3 rounded-full flex items-center gap-1.5 text-xs font-semibold hover:shadow-gold transition-shadow"
-          aria-label="Quit"
-        >
-          <LogOut className="h-4 w-4 text-gold-300" />
-          <span className="hidden xs:inline">Quit</span>
-        </button>
-      </div>
+      <button
+        onClick={togglePause}
+        className="panel-gold h-10 w-10 rounded-full flex items-center justify-center hover:shadow-gold transition-shadow"
+        aria-label={phase === "paused" ? "Resume" : "Pause"}
+      >
+        {phase === "paused"
+          ? <Play className="h-4 w-4 text-gold-300" fill="currentColor" />
+          : <Pause className="h-4 w-4 text-gold-300" fill="currentColor" />}
+      </button>
+      <button
+        onClick={askQuit}
+        className="panel-gold h-10 w-10 rounded-full flex items-center justify-center hover:shadow-gold transition-shadow"
+        aria-label="Quit"
+      >
+        <LogOut className="h-4 w-4 text-gold-300" />
+      </button>
 
       {/* Pause overlay */}
       {phase === "paused" && !confirmQuit && (

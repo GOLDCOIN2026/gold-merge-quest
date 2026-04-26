@@ -55,7 +55,7 @@ export function MainMenu() {
 
         {/* Headline */}
         <h1 className="text-2xl sm:text-3xl font-extrabold text-gold mb-1 tracking-tight">
-          Play Gold Coin Merge Quest
+          GOLD COIN MERGE QUEST
         </h1>
         <p className="text-sm text-muted-foreground mb-6">
           Make Free Rewards Every Day

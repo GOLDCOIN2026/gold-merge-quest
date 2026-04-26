@@ -204,13 +204,12 @@ function TileVisual({ tile }: { tile: Tile }) {
         draggable={false}
         className="w-full h-full object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] pointer-events-none"
       />
-      {/* Category chip (top-left) */}
+      {/* Category dot (top-left) — color-only marker, no text */}
       <span
-        className="absolute top-0.5 left-0.5 px-1 py-px rounded-md text-[8px] font-extrabold tracking-tight uppercase leading-none"
-        style={{ background: cat.hue, color: "#0b0b0b" }}
-      >
-        {cat.short}
-      </span>
+        className="absolute top-0.5 left-0.5 h-2 w-2 rounded-full"
+        style={{ background: cat.hue, boxShadow: `0 0 6px ${cat.hue}` }}
+        aria-label={cat.name}
+      />
       {/* Level chip (bottom-right) */}
       <span className="absolute bottom-0.5 right-1 text-[9px] sm:text-[10px] font-bold text-gold-200 tabular-nums drop-shadow">
         {tile.level}
