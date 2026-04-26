@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { GAME_CONFIG, spawnIntervalForIndex } from "@/game/config";
 import { selectors, useGame } from "@/game/store";
-import { CATEGORIES, CATEGORY_IDS } from "@/game/items";
 import { Star, Zap, Sparkles, Timer, Repeat, Users } from "lucide-react";
 
 /** Format ms → "M:SS". */
@@ -28,7 +27,6 @@ export function HUD() {
   const cyclePosition = useGame(s => s.cyclePosition);
   const refillsUsedToday = useGame(s => s.refillsUsedToday);
   const referralCredits = useGame(s => s.referralRefillCredits);
-  const activeCategories = useGame(selectors.activeCategories);
 
   // Tick every second so countdowns stay fresh.
   const [now, setNow] = useState(() => Date.now());
