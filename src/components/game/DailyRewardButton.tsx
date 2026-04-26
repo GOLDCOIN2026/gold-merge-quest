@@ -29,7 +29,7 @@ export function DailyRewardButton() {
         Daily
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={() => setOpen(false)}>
           <div className="panel-gold rounded-3xl p-6 w-full max-w-sm text-center animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="mx-auto h-20 w-20 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold-strong mb-4">
               <Gift className="h-10 w-10 text-primary-foreground" />
