@@ -52,7 +52,7 @@ function SellConfirm({ tile, reward, onConfirm, onCancel }: {
   const item = getItem(tile.category, tile.level);
   const cat = getCategory(tile.category);
   return (
-    <div className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in">
+    <div className="fixed inset-0 z-[115] bg-black/80 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in">
       <div className="panel-gold rounded-3xl p-6 w-full max-w-xs text-center shadow-popup animate-scale-in">
         <div
           className="mx-auto h-24 w-24 rounded-2xl flex items-center justify-center mb-3"
