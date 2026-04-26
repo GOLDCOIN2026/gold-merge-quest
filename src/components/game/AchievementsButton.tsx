@@ -17,7 +17,7 @@ export function AchievementsButton() {
         {unlocked}/{achievements.length}
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-fade-in" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-fade-in" onClick={() => setOpen(false)}>
           <div className="panel-gold rounded-3xl p-5 w-full max-w-md max-h-[80vh] overflow-y-auto no-scrollbar animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-bold text-gold flex items-center gap-2"><Trophy className="h-5 w-5" /> Achievements</h2>

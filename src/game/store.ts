@@ -19,6 +19,7 @@ import {
   saveGameData,
   loadGameData,
   getReferralCount,
+  submitLeaderboardScore,
 } from "./bridge";
 import { SFX } from "./sound";
 
@@ -67,9 +68,10 @@ export interface BannerMsg {
   variant: "achievement" | "level" | "reward" | "combo";
 }
 
-/** Tracks whether each per-day free use is still available. */
+/** Tracks per-day free / capped uses. */
 export interface DailyFreeUses {
-  speedBoost: boolean;
+  speedBoost: boolean;       // 1 free speed boost/day
+  speedBoostAdUses: number;  // ad-based speed boost uses today (cap = 3)
 }
 
 export interface GameState {
@@ -202,7 +204,7 @@ function seedBoard(): (Tile | null)[] {
 }
 
 function freshDailyFreeUses(): DailyFreeUses {
-  return { speedBoost: true };
+  return { speedBoost: true, speedBoostAdUses: 0 };
 }
 
 function defaultUnlocked(): Record<CategoryId, number> {
@@ -339,6 +341,14 @@ export function loadFromStorage() {
   const validBoard = Array.isArray(blob.board) && blob.board.length === CELLS
     && blob.board.every(t => t == null || (typeof t === "object" && "category" in t));
 
+  // Migrate dailyFreeUses if missing the new ad-uses field
+  const migratedDaily: DailyFreeUses = isNewDay
+    ? freshDailyFreeUses()
+    : {
+        speedBoost: blob.dailyFreeUses?.speedBoost ?? true,
+        speedBoostAdUses: blob.dailyFreeUses?.speedBoostAdUses ?? 0,
+      };
+
   set({
     ...blob,
     board: validBoard ? blob.board : seedBoard(),
@@ -351,9 +361,11 @@ export function loadFromStorage() {
     selectedCell: null,
     // Reset daily-reset things at day rollover
     refillsUsedToday: isNewDay ? 0 : blob.refillsUsedToday,
-    dailyFreeUses: isNewDay ? freshDailyFreeUses() : blob.dailyFreeUses,
-    // Spawn schedule resets when the player starts the game from the menu.
-    spawnIndex: 0,
+    dailyFreeUses: migratedDaily,
+    // Spawn schedule resumes from saved cycle position so timers
+    // *appear* to keep ticking even while the app was closed.
+    // Actual spawn catch-up happens when startGame is called.
+    spawnIndex: blob.spawnIndex ?? 0,
     nextSpawnAt: 0,
     cyclePosition: blob.cyclePosition ?? 0,
     unlockedMaxLevelByCategory: blob.unlockedMaxLevelByCategory ?? defaultUnlocked(),
@@ -389,16 +401,77 @@ export function syncReferralCredits() {
 }
 
 // -------------------- flow control --------------------
+/**
+ * Start gameplay. Performs offline catch-up if the saved spawn schedule
+ * indicates time has passed while the game was closed/backgrounded.
+ */
 export function startGame() {
   const now = Date.now();
-  set({
+
+  // If we have a saved schedule, fast-forward through any spawns that
+  // would have occurred while the player was offline.
+  applyOfflineSpawns(now);
+
+  set(s => ({
     phase: "playing",
-    spawnIndex: 0,
-    cyclePosition: 0,
-    nextSpawnAt: now + spawnIntervalForIndex(0),
+    // If catch-up populated nextSpawnAt, keep it; otherwise schedule fresh.
+    nextSpawnAt: s.nextSpawnAt > 0 ? s.nextSpawnAt : now + spawnIntervalForIndex(s.spawnIndex),
     selectedCell: null,
-  });
+  }));
   SFX.reward();
+}
+
+/**
+ * Simulate spawn ticks that should have happened during offline time.
+ * Caps total catch-up to one full cycle (10 minutes) to avoid flooding
+ * the board after a long absence.
+ */
+function applyOfflineSpawns(now: number) {
+  const blob = loadGameData<SaveBlob>();
+  if (!blob || !blob.savedAt || !blob.nextSpawnAt || blob.nextSpawnAt <= 0) return;
+
+  const elapsed = now - blob.savedAt;
+  // Cap catch-up at one full cycle (10 minutes).
+  if (elapsed <= 0) return;
+  const maxCatchupMs = 10 * 60 * 1000;
+  let cursor = blob.nextSpawnAt;
+  let spawnIdx = state.spawnIndex;
+  let cyclePos = state.cyclePosition;
+  let board = state.board.slice();
+  let spawned = 0;
+  const cycleLen = GAME_CONFIG.AUTO_SPAWN_CYCLE_LENGTH;
+  const catchupLimit = Math.min(now, blob.savedAt + maxCatchupMs);
+
+  while (cursor <= catchupLimit) {
+    // Find first empty cell — if board is full, hold the schedule.
+    const empty = board.findIndex(c => c === null);
+    if (empty < 0) break;
+    const cat = randomCategory();
+    const lvl = Math.random() < 0.85 ? 1 : Math.min(GAME_CONFIG.AUTO_SPAWN_MAX_LEVEL, 2);
+    board = board.slice();
+    board[empty] = { id: uid(), category: cat, level: lvl, bornAt: cursor };
+    spawnIdx = (spawnIdx + 1) % cycleLen;
+    cyclePos += 1;
+    spawned += 1;
+    cursor = cursor + spawnIntervalForIndex(spawnIdx);
+  }
+
+  set({
+    board,
+    spawnIndex: spawnIdx,
+    cyclePosition: cyclePos,
+    // If we hit the cap or board went full mid-catch-up, keep the cursor;
+    // otherwise resume from the cursor (which is in the future).
+    nextSpawnAt: cursor > now ? cursor : now + spawnIntervalForIndex(spawnIdx),
+  });
+
+  if (spawned > 0) {
+    pushBanner({
+      title: "Welcome Back!",
+      subtitle: `+${spawned} item${spawned === 1 ? "" : "s"} spawned while away`,
+      variant: "reward",
+    });
+  }
 }
 
 export function pauseGame() {
@@ -418,11 +491,12 @@ export function resumeGame() {
 
 export function quitToMenu() {
   persistNow();
+  // Preserve spawnIndex / cyclePosition / nextSpawnAt so timers continue
+  // ticking offline. We just leave the playing phase.
   set({
     phase: "menu",
     selectedCell: null,
     combo: 0, comboMult: 1,
-    spawnIndex: 0, nextSpawnAt: 0, cyclePosition: 0,
   });
   SFX.pickup();
 }
@@ -479,6 +553,8 @@ function awardTokens(amount: number, cell: CellId | null) {
   if (amount <= 0) return;
   set(s => ({ tokens: s.tokens + amount }));
   bridgeReward(amount);
+  // Update global leaderboard standing.
+  try { submitLeaderboardScore(state.tokens); } catch { /* noop */ }
   if (cell != null) pushFloat(cell, `+${amount} 🪙`, "token");
 }
 
@@ -634,6 +710,9 @@ function performMerge(from: CellId, to: CellId) {
       unlockedMaxLevelByCategory: { ...s.unlockedMaxLevelByCategory, [cat]: newLevel },
     }));
     pushBanner({ title: "New Item Unlocked!", subtitle: item.name, variant: "reward" });
+    // Reward the player with a free auto-refill the first time each level
+    // is reached — fills only currently empty cells with low-tier tiles.
+    window.setTimeout(() => doAutoRefill(`Level ${newLevel} unlocked`), 600);
   }
   if (newLevel >= 5)  unlockAchievement("create_l5");
   if (newLevel >= 7)  unlockAchievement("create_l7");
@@ -748,26 +827,38 @@ export interface RefillEligibility {
   needsAd: boolean;
   /** Number of currently empty board cells. */
   emptyCells: number;
+  /**
+   * Refill priority for the NEXT refill:
+   *  - "ad-free"   → first DAILY_AD_REFILLS/day, ad-gated, free
+   *  - "referral"  → consumes a referral credit, no ad
+   *  - "ad-extra"  → all credits exhausted; extra refills always require an ad
+   */
+  nextRefillSource: "ad-free" | "referral" | "ad-extra";
 }
 
 export function getRefillEligibility(): RefillEligibility {
   const empty = state.board.filter(c => c == null).length;
   const adLeft = Math.max(0, GAME_CONFIG.DAILY_AD_REFILLS - state.refillsUsedToday);
   const referral = state.referralRefillCredits;
+  const next: RefillEligibility["nextRefillSource"] =
+    adLeft > 0 ? "ad-free" : referral > 0 ? "referral" : "ad-extra";
   return {
     adRefillsLeftToday: adLeft,
     referralCredits: referral,
-    canRefill: empty > 0 && (adLeft > 0 || referral > 0),
-    needsAd: adLeft > 0,
+    // Refills are ALWAYS available now: when ad-free + referral are exhausted,
+    // the player can still watch a rewarded ad for an "extra" refill.
+    canRefill: empty > 0,
+    needsAd: next !== "referral",
     emptyCells: empty,
+    nextRefillSource: next,
   };
 }
 
 /**
- * Perform a refill: fill ONLY currently empty cells with new low-tier tiles.
- * Existing items remain untouched. Caller is responsible for ad gating.
+ * Fill every empty cell with a new low-tier tile.
+ * `source` controls which counter / credit is consumed (or none, for auto refills).
  */
-function doRefill(source: "ad" | "referral") {
+function doRefill(source: "ad" | "referral" | "ad-extra" | "auto", reason?: string): number {
   const board = state.board.slice();
   let placed = 0;
   for (let i = 0; i < board.length; i++) {
@@ -777,22 +868,32 @@ function doRefill(source: "ad" | "referral") {
     board[i] = { id: uid(), category: cat, level: lvl, bornAt: Date.now() };
     placed++;
   }
+  if (placed === 0) return 0;
   set(s => ({
     board,
     refillsUsedToday: source === "ad" ? s.refillsUsedToday + 1 : s.refillsUsedToday,
-    referralRefillCredits: source === "referral" ? Math.max(0, s.referralRefillCredits - 1) : s.referralRefillCredits,
+    referralRefillCredits: source === "referral"
+      ? Math.max(0, s.referralRefillCredits - 1)
+      : s.referralRefillCredits,
   }));
   SFX.reward();
   pushBanner({
-    title: "Board Refilled!",
-    subtitle: `+${placed} item${placed === 1 ? "" : "s"} placed`,
+    title: source === "auto" ? "Free Refill!" : "Board Refilled!",
+    subtitle: reason
+      ? `${reason} · +${placed} item${placed === 1 ? "" : "s"}`
+      : `+${placed} item${placed === 1 ? "" : "s"} placed`,
     variant: "reward",
   });
   schedulePersist();
   return placed;
 }
 
-/** Use the next ad-based refill. Caller must have already shown the ad. */
+/** Auto-refill triggered by gameplay events (e.g. new level unlock). */
+export function doAutoRefill(reason: string): number {
+  return doRefill("auto", reason);
+}
+
+/** Use the next free ad-based refill. Caller must have already shown the ad. */
 export function consumeAdRefill(): number {
   const e = getRefillEligibility();
   if (e.emptyCells === 0 || e.adRefillsLeftToday <= 0) return 0;
@@ -804,6 +905,17 @@ export function consumeReferralRefill(): number {
   const e = getRefillEligibility();
   if (e.emptyCells === 0 || e.referralCredits <= 0) return 0;
   return doRefill("referral");
+}
+
+/**
+ * Extra ad-gated refill — used after both daily free refills AND
+ * referral credits are exhausted. Caller must have already shown the ad.
+ * Doesn't increment refillsUsedToday (those are reserved for the free tier).
+ */
+export function consumeExtraAdRefill(): number {
+  const e = getRefillEligibility();
+  if (e.emptyCells === 0) return 0;
+  return doRefill("ad-extra");
 }
 
 // -------------------- missions / daily --------------------
@@ -831,9 +943,45 @@ export function claimDailyReward(): boolean {
 }
 
 // -------------------- boosters --------------------
+/** Speed boost eligibility for the next activation attempt. */
+export interface SpeedBoostEligibility {
+  freeAvailable: boolean;
+  adUsesUsed: number;
+  adUsesMax: number;
+  adUsesLeft: number;
+  /** True if the player has any way to activate (free or ad). */
+  canActivate: boolean;
+}
+
+export function getSpeedBoostEligibility(): SpeedBoostEligibility {
+  const free = !!state.dailyFreeUses.speedBoost;
+  const used = state.dailyFreeUses.speedBoostAdUses ?? 0;
+  const max = GAME_CONFIG.SPEED_BOOST_MAX_AD_USES_PER_DAY;
+  const left = Math.max(0, max - used);
+  return {
+    freeAvailable: free,
+    adUsesUsed: used,
+    adUsesMax: max,
+    adUsesLeft: left,
+    canActivate: free || left > 0,
+  };
+}
+
 export function consumeFreeSpeedBoost() {
   if (!state.dailyFreeUses.speedBoost) return;
   set(s => ({ dailyFreeUses: { ...s.dailyFreeUses, speedBoost: false } }));
+  schedulePersist();
+}
+
+/** Increment the daily ad-use counter. Returns false if cap exceeded. */
+export function consumeAdSpeedBoost(): boolean {
+  const used = state.dailyFreeUses.speedBoostAdUses ?? 0;
+  if (used >= GAME_CONFIG.SPEED_BOOST_MAX_AD_USES_PER_DAY) return false;
+  set(s => ({
+    dailyFreeUses: { ...s.dailyFreeUses, speedBoostAdUses: used + 1 },
+  }));
+  schedulePersist();
+  return true;
 }
 
 export function activateSpeedBoost() {

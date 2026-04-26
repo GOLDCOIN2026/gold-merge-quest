@@ -12,6 +12,9 @@ import { Tutorial } from "@/components/game/Tutorial";
 import { MainMenu } from "@/components/game/MainMenu";
 import { MenuBar } from "@/components/game/MenuBar";
 import { SellAction } from "@/components/game/SellAction";
+import { InviteButton } from "@/components/game/InviteButton";
+import { LeaderboardButton } from "@/components/game/LeaderboardButton";
+import { ClaimRewardButton } from "@/components/game/ClaimRewardButton";
 import {
   autoSpawnTick,
   comboTick,
@@ -65,32 +68,36 @@ const Index = () => {
 
   return (
     <main className="relative min-h-screen w-full px-3 py-3 max-w-[640px] mx-auto flex flex-col gap-3">
-      {/* Top bar — only visible in-game */}
+      {/* ---- Top bar (sticky, always above board) ---- */}
       {phase !== "menu" && (
-        <header className="flex items-center justify-between gap-2 z-10 animate-fade-in">
-          <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-base sm:text-lg font-extrabold text-gold tracking-tight truncate">
-              Gold Coin Merge Quest
-            </h1>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <MenuBar />
-            <DailyRewardButton />
-            <AchievementsButton />
-            <button
-              onClick={() => setMuted(!muted)}
-              className="panel-gold h-10 w-10 rounded-full flex items-center justify-center"
-              aria-label={muted ? "Unmute" : "Mute"}
-            >
-              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold-300" />}
-            </button>
+        <header className="sticky top-0 -mx-3 px-3 pt-3 pb-2 z-40 backdrop-blur-md bg-background/70 animate-fade-in border-b border-gold-700/20">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-base sm:text-lg font-extrabold text-gold tracking-tight truncate">
+                Gold Coin Merge Quest
+              </h1>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              <MenuBar />
+              <InviteButton />
+              <LeaderboardButton />
+              <DailyRewardButton />
+              <AchievementsButton />
+              <button
+                onClick={() => setMuted(!muted)}
+                className="panel-gold h-10 w-10 rounded-full flex items-center justify-center"
+                aria-label={muted ? "Unmute" : "Mute"}
+              >
+                {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold-300" />}
+              </button>
+            </div>
           </div>
         </header>
       )}
 
       {/* Coin + Token counters */}
       {phase !== "menu" && (
-        <section className="flex items-stretch gap-2 animate-fade-in">
+        <section className="flex items-stretch gap-2 z-20 animate-fade-in">
           <div className="flex-1"><HUD /></div>
           <div className="flex flex-col gap-1.5 self-start">
             <CoinCounter />
@@ -101,14 +108,21 @@ const Index = () => {
 
       {/* Board */}
       {phase !== "menu" && (
-        <section className="z-10 animate-fade-in">
+        <section className="z-0 animate-fade-in">
           <Board />
+        </section>
+      )}
+
+      {/* Claim Reward — prominent CTA above the action bar */}
+      {phase !== "menu" && (
+        <section className="z-20 animate-fade-in">
+          <ClaimRewardButton />
         </section>
       )}
 
       {/* Action bar */}
       {phase !== "menu" && (
-        <section className="z-10 animate-fade-in"><ActionBar /></section>
+        <section className="z-20 animate-fade-in"><ActionBar /></section>
       )}
 
       {/* Missions */}

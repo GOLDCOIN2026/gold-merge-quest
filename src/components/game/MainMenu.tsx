@@ -30,7 +30,7 @@ export function MainMenu() {
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-5 animate-fade-in overflow-hidden">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-5 animate-fade-in overflow-hidden">
       {/* Ambient backdrop */}
       <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-bg)" }} />
       <div

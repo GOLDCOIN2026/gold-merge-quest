@@ -63,7 +63,7 @@ export function MenuBar() {
 
       {/* Pause overlay */}
       {phase === "paused" && !confirmQuit && (
-        <div className="fixed inset-0 z-[70] bg-black/75 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in">
+        <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in">
           <div className="panel-gold rounded-3xl p-7 w-full max-w-xs text-center shadow-popup animate-scale-in">
             <div className="mx-auto h-16 w-16 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold mb-4">
               <Pause className="h-8 w-8 text-primary-foreground" fill="currentColor" />
@@ -91,7 +91,7 @@ export function MenuBar() {
 
       {/* Quit confirmation */}
       {confirmQuit && (
-        <div className="fixed inset-0 z-[75] bg-black/80 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in">
+        <div className="fixed inset-0 z-[125] bg-black/85 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in">
           <div className="panel-gold rounded-3xl p-6 w-full max-w-xs text-center shadow-popup animate-scale-in">
             <h2 className="text-lg font-extrabold text-gold mb-1">Quit to Menu?</h2>
             <p className="text-xs text-muted-foreground mb-5">
