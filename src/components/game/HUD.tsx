@@ -58,8 +58,8 @@ export function HUD() {
   const adRefillsLeft = Math.max(0, GAME_CONFIG.DAILY_AD_REFILLS - refillsUsedToday);
 
   return (
-    <div className="panel-gold rounded-2xl p-3 space-y-2 text-sm">
-      {/* Level + XP */}
+    <div className="panel-gold rounded-2xl p-3 space-y-2.5 text-sm">
+      {/* Row 1 — Level + XP */}
       <div className="flex items-center gap-3">
         <div className="relative h-10 w-10 shrink-0 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold">
           <Star className="h-5 w-5 text-primary-foreground" fill="currentColor" />
@@ -81,7 +81,7 @@ export function HUD() {
         </div>
       </div>
 
-      {/* Spawn timer + cycle position */}
+      {/* Row 2 — Spawn timer */}
       <div className="rounded-xl bg-secondary/40 p-2">
         <div className="flex justify-between items-center text-[11px] text-muted-foreground mb-1">
           <span className="flex items-center gap-1">
@@ -98,54 +98,48 @@ export function HUD() {
         </div>
       </div>
 
-      {/* Active categories on board */}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {CATEGORY_IDS.map(id => {
-          const c = CATEGORIES[id];
-          const active = activeCategories.includes(id);
-          return (
-            <span
-              key={id}
-              className="px-2 py-0.5 text-[10px] font-bold rounded-full transition-opacity"
-              style={{
-                background: active ? c.glow : "transparent",
-                border: `1px solid ${c.hue}`,
-                color: c.hue,
-                opacity: active ? 1 : 0.4,
-              }}
-            >
-              {c.name}
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Combo + booster timers + refill credits */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {combo >= 2 && (
+      {/* Row 3 — Combo (own row) */}
+      {combo >= 2 && (
+        <div className="flex">
           <span className="px-2 py-1 rounded-full bg-accent/20 text-accent font-bold text-xs animate-scale-in">
             🔥 Combo {combo} · ×{comboMult}
           </span>
-        )}
-        {doubleActive && (
+        </div>
+      )}
+
+      {/* Row 4 — Double rewards (own row) */}
+      {doubleActive && (
+        <div className="flex">
           <span className="px-2 py-1 rounded-full bg-gold-500/20 text-gold-300 font-bold text-xs flex items-center gap-1 tabular-nums">
-            <Sparkles className="h-3 w-3" /> 2× {fmt(doubleUntil - now)}
+            <Sparkles className="h-3 w-3" /> 2× Rewards {fmt(doubleUntil - now)}
           </span>
-        )}
-        {speedActive && (
+        </div>
+      )}
+
+      {/* Row 5 — Speed boost (own row) */}
+      {speedActive && (
+        <div className="flex">
           <span className="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center gap-1 tabular-nums">
-            <Zap className="h-3 w-3" /> Speed {fmt(speedUntil - now)}
+            <Zap className="h-3 w-3" /> Speed Boost {fmt(speedUntil - now)}
           </span>
-        )}
+        </div>
+      )}
+
+      {/* Row 6 — Ad refills (own row) */}
+      <div className="flex">
         <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
-          <Repeat className="h-3 w-3 text-gold-300" /> {adRefillsLeft}/2
-        </span>
-        <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
-          <Users className="h-3 w-3 text-emerald-300" /> {referralCredits}
+          <Repeat className="h-3 w-3 text-gold-300" /> Ad Refills {adRefillsLeft}/{GAME_CONFIG.DAILY_AD_REFILLS}
         </span>
       </div>
 
-      {/* Daily cap */}
+      {/* Row 7 — Referral credits (own row) */}
+      <div className="flex">
+        <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
+          <Users className="h-3 w-3 text-emerald-300" /> Referral Credits {referralCredits}
+        </span>
+      </div>
+
+      {/* Row 8 — Daily cap */}
       <div>
         <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
           <span>Daily earnings</span>
