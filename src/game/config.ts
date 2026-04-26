@@ -6,9 +6,9 @@ export const GAME_CONFIG = {
   BOARD_SIZE: 6,
 
   // ---- Auto item generation (progressive cycle) ----
-  // 1st spawn: 5s, 2nd: 6s, 3rd: 7s, ... 36th: 40s, then resets to 5s.
-  AUTO_SPAWN_FIRST_DELAY_MS: 5_000,
-  AUTO_SPAWN_STEP_MS: 1_000,
+  // Cycle of 36 spawns completes in EXACTLY 10 minutes (600s).
+  // Spawns 1-30 hold near-constant ~5.0s pacing (slight 0.01s drift for "alive" feel).
+  // Spawns 31-36 ramp up to balance the cycle while keeping the 10-minute total.
   AUTO_SPAWN_CYCLE_LENGTH: 36, // resets after this many spawns
   AUTO_SPAWN_MAX_LEVEL: 2,     // newly spawned tiles are level 1 or 2
 
@@ -25,14 +25,16 @@ export const GAME_CONFIG = {
 
   // ---- Speed Boost ----
   // Doubles spawn rate (halves intervals) for 2 minutes.
+  // 1 free use/day + up to 3 rewarded-ad uses/day.
   SPEED_BOOST_MULTIPLIER: 2,
   SPEED_BOOST_DURATION_MS: 2 * 60 * 1000,
+  SPEED_BOOST_MAX_AD_USES_PER_DAY: 3,
 
   // Daily double-rewards booster (kept from previous build)
   DOUBLE_REWARDS_DURATION_MS: 10 * 60 * 1000,
 
   // ---- Refill system ----
-  DAILY_AD_REFILLS: 2,         // first 2 refills/day via ads
+  DAILY_AD_REFILLS: 2,         // first 2 refills/day via ads (before referral tier)
   REFILL_BATCH_LEVEL_1_PROB: 0.85, // probability a refilled tile is level 1 vs 2
 
   // ---- Daily login reward ----
@@ -47,16 +49,31 @@ export const GAME_CONFIG = {
     9: 50,
     10: 100,
   } as Record<number, number>,
+
+  // ---- Referral / share ----
+  REFERRAL_BASE_URL: "https://goldcoinweb3.com/?ref=",
+  CLAIM_URL: "https://goldcoinweb3.com/",
 };
 
 export type GameConfig = typeof GAME_CONFIG;
 
 /**
  * Returns the delay (ms) before the Nth auto-spawn within the current cycle.
- *   index 0 → 5s, 1 → 6s, ..., 35 → 40s. After index 35 the engine resets
- *   the cycle counter to 0, restarting at 5s.
+ *
+ * Cycle of 36 spawns = 600,000 ms total (10 minutes).
+ *  - Spawns 1-30  → 5000 + (idx * 10) ms      (5.00s, 5.01s, ..., 5.29s)
+ *      Sum: 30·5000 + 10·(0+...+29) = 154,350 ms
+ *  - Spawns 31-36 → 49275 + ((idx-30) · 10000) ms  (49.275, 59.275, ..., 99.275)
+ *      Sum: 6·49275 + 10000·(0+...+5) = 295,650 + 150,000 = 445,650 ms
+ *  - Grand total: 154,350 + 445,650 = 600,000 ms ✓
+ *
+ * After index 35 the engine resets the cycle counter to 0.
  */
 export function spawnIntervalForIndex(index: number): number {
   const within = index % GAME_CONFIG.AUTO_SPAWN_CYCLE_LENGTH;
-  return GAME_CONFIG.AUTO_SPAWN_FIRST_DELAY_MS + within * GAME_CONFIG.AUTO_SPAWN_STEP_MS;
+  if (within < 30) {
+    return 5000 + within * 10;
+  }
+  // Spawns 31-36 (within = 30..35)
+  return 49275 + (within - 30) * 10000;
 }
