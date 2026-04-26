@@ -710,6 +710,9 @@ function performMerge(from: CellId, to: CellId) {
       unlockedMaxLevelByCategory: { ...s.unlockedMaxLevelByCategory, [cat]: newLevel },
     }));
     pushBanner({ title: "New Item Unlocked!", subtitle: item.name, variant: "reward" });
+    // Reward the player with a free auto-refill the first time each level
+    // is reached — fills only currently empty cells with low-tier tiles.
+    window.setTimeout(() => doAutoRefill(`Level ${newLevel} unlocked`), 600);
   }
   if (newLevel >= 5)  unlockAchievement("create_l5");
   if (newLevel >= 7)  unlockAchievement("create_l7");
