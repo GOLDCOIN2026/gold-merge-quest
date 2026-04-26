@@ -401,16 +401,77 @@ export function syncReferralCredits() {
 }
 
 // -------------------- flow control --------------------
+/**
+ * Start gameplay. Performs offline catch-up if the saved spawn schedule
+ * indicates time has passed while the game was closed/backgrounded.
+ */
 export function startGame() {
   const now = Date.now();
-  set({
+
+  // If we have a saved schedule, fast-forward through any spawns that
+  // would have occurred while the player was offline.
+  applyOfflineSpawns(now);
+
+  set(s => ({
     phase: "playing",
-    spawnIndex: 0,
-    cyclePosition: 0,
-    nextSpawnAt: now + spawnIntervalForIndex(0),
+    // If catch-up populated nextSpawnAt, keep it; otherwise schedule fresh.
+    nextSpawnAt: s.nextSpawnAt > 0 ? s.nextSpawnAt : now + spawnIntervalForIndex(s.spawnIndex),
     selectedCell: null,
-  });
+  }));
   SFX.reward();
+}
+
+/**
+ * Simulate spawn ticks that should have happened during offline time.
+ * Caps total catch-up to one full cycle (10 minutes) to avoid flooding
+ * the board after a long absence.
+ */
+function applyOfflineSpawns(now: number) {
+  const blob = loadGameData<SaveBlob>();
+  if (!blob || !blob.savedAt || !blob.nextSpawnAt || blob.nextSpawnAt <= 0) return;
+
+  const elapsed = now - blob.savedAt;
+  // Cap catch-up at one full cycle (10 minutes).
+  if (elapsed <= 0) return;
+  const maxCatchupMs = 10 * 60 * 1000;
+  let cursor = blob.nextSpawnAt;
+  let spawnIdx = state.spawnIndex;
+  let cyclePos = state.cyclePosition;
+  let board = state.board.slice();
+  let spawned = 0;
+  const cycleLen = GAME_CONFIG.AUTO_SPAWN_CYCLE_LENGTH;
+  const catchupLimit = Math.min(now, blob.savedAt + maxCatchupMs);
+
+  while (cursor <= catchupLimit) {
+    // Find first empty cell — if board is full, hold the schedule.
+    const empty = board.findIndex(c => c === null);
+    if (empty < 0) break;
+    const cat = randomCategory();
+    const lvl = Math.random() < 0.85 ? 1 : Math.min(GAME_CONFIG.AUTO_SPAWN_MAX_LEVEL, 2);
+    board = board.slice();
+    board[empty] = { id: uid(), category: cat, level: lvl, bornAt: cursor };
+    spawnIdx = (spawnIdx + 1) % cycleLen;
+    cyclePos += 1;
+    spawned += 1;
+    cursor = cursor + spawnIntervalForIndex(spawnIdx);
+  }
+
+  set({
+    board,
+    spawnIndex: spawnIdx,
+    cyclePosition: cyclePos,
+    // If we hit the cap or board went full mid-catch-up, keep the cursor;
+    // otherwise resume from the cursor (which is in the future).
+    nextSpawnAt: cursor > now ? cursor : now + spawnIntervalForIndex(spawnIdx),
+  });
+
+  if (spawned > 0) {
+    pushBanner({
+      title: "Welcome Back!",
+      subtitle: `+${spawned} item${spawned === 1 ? "" : "s"} spawned while away`,
+      variant: "reward",
+    });
+  }
 }
 
 export function pauseGame() {
@@ -430,11 +491,12 @@ export function resumeGame() {
 
 export function quitToMenu() {
   persistNow();
+  // Preserve spawnIndex / cyclePosition / nextSpawnAt so timers continue
+  // ticking offline. We just leave the playing phase.
   set({
     phase: "menu",
     selectedCell: null,
     combo: 0, comboMult: 1,
-    spawnIndex: 0, nextSpawnAt: 0, cyclePosition: 0,
   });
   SFX.pickup();
 }
