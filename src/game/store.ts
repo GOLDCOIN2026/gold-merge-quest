@@ -341,6 +341,14 @@ export function loadFromStorage() {
   const validBoard = Array.isArray(blob.board) && blob.board.length === CELLS
     && blob.board.every(t => t == null || (typeof t === "object" && "category" in t));
 
+  // Migrate dailyFreeUses if missing the new ad-uses field
+  const migratedDaily: DailyFreeUses = isNewDay
+    ? freshDailyFreeUses()
+    : {
+        speedBoost: blob.dailyFreeUses?.speedBoost ?? true,
+        speedBoostAdUses: blob.dailyFreeUses?.speedBoostAdUses ?? 0,
+      };
+
   set({
     ...blob,
     board: validBoard ? blob.board : seedBoard(),
@@ -353,9 +361,11 @@ export function loadFromStorage() {
     selectedCell: null,
     // Reset daily-reset things at day rollover
     refillsUsedToday: isNewDay ? 0 : blob.refillsUsedToday,
-    dailyFreeUses: isNewDay ? freshDailyFreeUses() : blob.dailyFreeUses,
-    // Spawn schedule resets when the player starts the game from the menu.
-    spawnIndex: 0,
+    dailyFreeUses: migratedDaily,
+    // Spawn schedule resumes from saved cycle position so timers
+    // *appear* to keep ticking even while the app was closed.
+    // Actual spawn catch-up happens when startGame is called.
+    spawnIndex: blob.spawnIndex ?? 0,
     nextSpawnAt: 0,
     cyclePosition: blob.cyclePosition ?? 0,
     unlockedMaxLevelByCategory: blob.unlockedMaxLevelByCategory ?? defaultUnlocked(),
