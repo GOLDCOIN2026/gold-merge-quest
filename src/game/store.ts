@@ -943,9 +943,45 @@ export function claimDailyReward(): boolean {
 }
 
 // -------------------- boosters --------------------
+/** Speed boost eligibility for the next activation attempt. */
+export interface SpeedBoostEligibility {
+  freeAvailable: boolean;
+  adUsesUsed: number;
+  adUsesMax: number;
+  adUsesLeft: number;
+  /** True if the player has any way to activate (free or ad). */
+  canActivate: boolean;
+}
+
+export function getSpeedBoostEligibility(): SpeedBoostEligibility {
+  const free = !!state.dailyFreeUses.speedBoost;
+  const used = state.dailyFreeUses.speedBoostAdUses ?? 0;
+  const max = GAME_CONFIG.SPEED_BOOST_MAX_AD_USES_PER_DAY;
+  const left = Math.max(0, max - used);
+  return {
+    freeAvailable: free,
+    adUsesUsed: used,
+    adUsesMax: max,
+    adUsesLeft: left,
+    canActivate: free || left > 0,
+  };
+}
+
 export function consumeFreeSpeedBoost() {
   if (!state.dailyFreeUses.speedBoost) return;
   set(s => ({ dailyFreeUses: { ...s.dailyFreeUses, speedBoost: false } }));
+  schedulePersist();
+}
+
+/** Increment the daily ad-use counter. Returns false if cap exceeded. */
+export function consumeAdSpeedBoost(): boolean {
+  const used = state.dailyFreeUses.speedBoostAdUses ?? 0;
+  if (used >= GAME_CONFIG.SPEED_BOOST_MAX_AD_USES_PER_DAY) return false;
+  set(s => ({
+    dailyFreeUses: { ...s.dailyFreeUses, speedBoostAdUses: used + 1 },
+  }));
+  schedulePersist();
+  return true;
 }
 
 export function activateSpeedBoost() {
