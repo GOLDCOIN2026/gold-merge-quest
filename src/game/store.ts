@@ -553,6 +553,8 @@ function awardTokens(amount: number, cell: CellId | null) {
   if (amount <= 0) return;
   set(s => ({ tokens: s.tokens + amount }));
   bridgeReward(amount);
+  // Update global leaderboard standing.
+  try { submitLeaderboardScore(state.tokens); } catch { /* noop */ }
   if (cell != null) pushFloat(cell, `+${amount} 🪙`, "token");
 }
 
