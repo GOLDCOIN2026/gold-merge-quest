@@ -19,6 +19,7 @@ import {
   saveGameData,
   loadGameData,
   getReferralCount,
+  submitLeaderboardScore,
 } from "./bridge";
 import { SFX } from "./sound";
 
