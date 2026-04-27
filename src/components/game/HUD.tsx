@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { GAME_CONFIG, spawnIntervalForIndex } from "@/game/config";
 import { selectors, useGame } from "@/game/store";
-import { Star, Zap, Sparkles, Timer, Repeat, Users } from "lucide-react";
+import { Star, Zap, Sparkles, Timer } from "lucide-react";
 
 /** Format ms → "M:SS". */
 function fmt(ms: number) {
@@ -25,8 +25,6 @@ export function HUD() {
   const nextSpawnAt = useGame(s => s.nextSpawnAt);
   const spawnIndex = useGame(s => s.spawnIndex);
   const cyclePosition = useGame(s => s.cyclePosition);
-  const refillsUsedToday = useGame(s => s.refillsUsedToday);
-  const referralCredits = useGame(s => s.referralRefillCredits);
 
   // Tick every second so countdowns stay fresh.
   const [now, setNow] = useState(() => Date.now());
@@ -52,8 +50,6 @@ export function HUD() {
   const spawnPct = upcomingInterval > 0
     ? Math.min(100, ((upcomingInterval - spawnCountdownMs) / upcomingInterval) * 100)
     : 0;
-
-  const adRefillsLeft = Math.max(0, GAME_CONFIG.DAILY_AD_REFILLS - refillsUsedToday);
 
   return (
     <div className="panel-gold rounded-2xl p-3 space-y-2.5 text-sm">
@@ -123,21 +119,7 @@ export function HUD() {
         </div>
       )}
 
-      {/* Row 6 — Ad refills (own row) */}
-      <div className="flex">
-        <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
-          <Repeat className="h-3 w-3 text-gold-300" /> Ad Refills {adRefillsLeft}/{GAME_CONFIG.DAILY_AD_REFILLS}
-        </span>
-      </div>
-
-      {/* Row 7 — Referral credits (own row) */}
-      <div className="flex">
-        <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
-          <Users className="h-3 w-3 text-emerald-300" /> Referral Credits {referralCredits}
-        </span>
-      </div>
-
-      {/* Row 8 — Daily cap */}
+      {/* Daily cap */}
       <div>
         <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
           <span>Daily earnings</span>
