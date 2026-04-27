@@ -60,20 +60,19 @@ export type GameConfig = typeof GAME_CONFIG;
 /**
  * Returns the delay (ms) before the Nth auto-spawn within the current cycle.
  *
- * Cycle of 36 spawns = 600,000 ms total (10 minutes).
- *  - Spawns 1-30  → 5000 + (idx * 10) ms      (5.00s, 5.01s, ..., 5.29s)
- *      Sum: 30·5000 + 10·(0+...+29) = 154,350 ms
- *  - Spawns 31-36 → 49275 + ((idx-30) · 10000) ms  (49.275, 59.275, ..., 99.275)
- *      Sum: 6·49275 + 10000·(0+...+5) = 295,650 + 150,000 = 445,650 ms
- *  - Grand total: 154,350 + 445,650 = 600,000 ms ✓
+ * Smooth linear progression across a 36-spawn cycle:
+ *   - Spawn 1  → 5.0s
+ *   - Spawn 36 → 20.0s
+ *   - Each step grows by 15s / 35 ≈ 0.4286s
  *
- * After index 35 the engine resets the cycle counter to 0.
+ * Total cycle duration ≈ 36·(5+20)/2 = 450,000 ms = 7m 30s ✓
+ * After index 35 the engine resets the cycle counter to 0 (back to 5.0s).
  */
 export function spawnIntervalForIndex(index: number): number {
-  const within = index % GAME_CONFIG.AUTO_SPAWN_CYCLE_LENGTH;
-  if (within < 30) {
-    return 5000 + within * 10;
-  }
-  // Spawns 31-36 (within = 30..35)
-  return 49275 + (within - 30) * 10000;
+  const cycleLen = GAME_CONFIG.AUTO_SPAWN_CYCLE_LENGTH;
+  const within = index % cycleLen;
+  const startMs = 5000;
+  const endMs = 20000;
+  const t = cycleLen <= 1 ? 0 : within / (cycleLen - 1);
+  return Math.round(startMs + (endMs - startMs) * t);
 }
