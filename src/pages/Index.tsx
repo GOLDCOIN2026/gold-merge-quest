@@ -1,16 +1,12 @@
 import { useEffect } from "react";
-import { Volume2, VolumeX } from "lucide-react";
 import { Board } from "@/components/game/Board";
 import { CoinCounter, TokenCounter } from "@/components/game/CoinCounter";
 import { HUD } from "@/components/game/HUD";
 import { ActionBar } from "@/components/game/ActionBar";
 import { MissionsPanel } from "@/components/game/MissionsPanel";
 import { BannerStack } from "@/components/game/BannerStack";
-import { AchievementsButton } from "@/components/game/AchievementsButton";
-import { DailyRewardButton } from "@/components/game/DailyRewardButton";
 import { Tutorial } from "@/components/game/Tutorial";
 import { MainMenu } from "@/components/game/MainMenu";
-import { MenuBar } from "@/components/game/MenuBar";
 import { SellAction } from "@/components/game/SellAction";
 import { InviteButton } from "@/components/game/InviteButton";
 import { LeaderboardButton } from "@/components/game/LeaderboardButton";
