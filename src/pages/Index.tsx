@@ -63,36 +63,33 @@ const Index = () => {
 
   return (
     <main className="relative min-h-screen w-full px-3 py-3 max-w-[640px] mx-auto flex flex-col gap-3">
-      {/* ---- Top bar (sticky, always above board) ---- */}
+      {/* ---- Top header (sticky, always above board) ---- */}
       {phase !== "menu" && (
-        <header className="sticky top-0 -mx-3 px-3 pt-3 pb-2 z-40 backdrop-blur-md bg-background/70 animate-fade-in border-b border-gold-700/20">
-          {/* Title centered */}
-          <h1 className="text-base sm:text-lg font-extrabold text-gold tracking-tight text-center mb-2 truncate">
-            GOLD COIN MERGE QUEST
+        <header className="sticky top-0 -mx-3 px-3 pt-3 pb-3 z-40 backdrop-blur-md bg-background/70 animate-fade-in border-b border-gold-700/20">
+          {/* Two-line premium title */}
+          <h1 className="text-center mb-3 leading-tight tracking-[0.18em]">
+            <span className="block text-2xl sm:text-3xl font-extrabold text-gold drop-shadow-[0_2px_8px_hsl(43_90%_55%/0.35)]">
+              GOLD COIN
+            </span>
+            <span className="block text-lg sm:text-xl font-bold text-gold-200/90">
+              MERGE QUEST
+            </span>
           </h1>
-          {/* Action icons — exactly 4 per row */}
-          <div className="grid grid-cols-4 gap-1.5 justify-items-center">
-            <MenuBar />
+          {/* Three icons: Share · Score · Diamonds */}
+          <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto">
             <InviteButton />
             <LeaderboardButton />
-            <DailyRewardButton />
-            <AchievementsButton />
-            <button
-              onClick={() => setMuted(!muted)}
-              className="panel-gold h-10 w-10 rounded-full flex items-center justify-center"
-              aria-label={muted ? "Unmute" : "Mute"}
-            >
-              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold-300" />}
-            </button>
+            <div className="flex justify-center">
+              <TokenCounter />
+            </div>
           </div>
         </header>
       )}
 
-      {/* Balance (left) + Diamonds (right) — only these 2 */}
+      {/* Score (coins) — single balance row beneath header */}
       {phase !== "menu" && (
-        <section className="flex items-center justify-between gap-2 z-20 animate-fade-in">
+        <section className="flex items-center justify-center z-20 animate-fade-in">
           <CoinCounter />
-          <TokenCounter />
         </section>
       )}
 
