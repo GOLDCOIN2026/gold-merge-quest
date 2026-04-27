@@ -6,9 +6,9 @@ export const GAME_CONFIG = {
   BOARD_SIZE: 6,
 
   // ---- Auto item generation (progressive cycle) ----
-  // Cycle of 36 spawns completes in EXACTLY 10 minutes (600s).
-  // Spawns 1-30 hold near-constant ~5.0s pacing (slight 0.01s drift for "alive" feel).
-  // Spawns 31-36 ramp up to balance the cycle while keeping the 10-minute total.
+  // Cycle of 36 spawns ≈ 7m 30s total (450s).
+  // Linear ramp: spawn 1 = 5.0s → spawn 36 = 20.0s.
+  // After spawn 36 the cycle resets back to 5.0s.
   AUTO_SPAWN_CYCLE_LENGTH: 36, // resets after this many spawns
   AUTO_SPAWN_MAX_LEVEL: 2,     // newly spawned tiles are level 1 or 2
 
