@@ -123,21 +123,7 @@ export function HUD() {
         </div>
       )}
 
-      {/* Row 6 — Ad refills (own row) */}
-      <div className="flex">
-        <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
-          <Repeat className="h-3 w-3 text-gold-300" /> Ad Refills {adRefillsLeft}/{GAME_CONFIG.DAILY_AD_REFILLS}
-        </span>
-      </div>
-
-      {/* Row 7 — Referral credits (own row) */}
-      <div className="flex">
-        <span className="px-2 py-1 rounded-full bg-secondary/60 text-foreground font-bold text-xs flex items-center gap-1">
-          <Users className="h-3 w-3 text-emerald-300" /> Referral Credits {referralCredits}
-        </span>
-      </div>
-
-      {/* Row 8 — Daily cap */}
+      {/* Daily cap */}
       <div>
         <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
           <span>Daily earnings</span>
