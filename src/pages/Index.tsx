@@ -16,7 +16,6 @@ import {
   comboTick,
   loadFromStorage,
   persistNow,
-  setMuted,
   syncReferralCredits,
   useGame,
 } from "@/game/store";
