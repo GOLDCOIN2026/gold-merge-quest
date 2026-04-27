@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { GAME_CONFIG, spawnIntervalForIndex } from "@/game/config";
 import { selectors, useGame } from "@/game/store";
-import { Star, Zap, Sparkles, Timer, Repeat, Users } from "lucide-react";
+import { Star, Zap, Sparkles, Timer } from "lucide-react";
 
 /** Format ms → "M:SS". */
 function fmt(ms: number) {
