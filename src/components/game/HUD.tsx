@@ -25,8 +25,6 @@ export function HUD() {
   const nextSpawnAt = useGame(s => s.nextSpawnAt);
   const spawnIndex = useGame(s => s.spawnIndex);
   const cyclePosition = useGame(s => s.cyclePosition);
-  const refillsUsedToday = useGame(s => s.refillsUsedToday);
-  const referralCredits = useGame(s => s.referralRefillCredits);
 
   // Tick every second so countdowns stay fresh.
   const [now, setNow] = useState(() => Date.now());
