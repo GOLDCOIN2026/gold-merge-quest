@@ -51,8 +51,6 @@ export function HUD() {
     ? Math.min(100, ((upcomingInterval - spawnCountdownMs) / upcomingInterval) * 100)
     : 0;
 
-  const adRefillsLeft = Math.max(0, GAME_CONFIG.DAILY_AD_REFILLS - refillsUsedToday);
-
   return (
     <div className="panel-gold rounded-2xl p-3 space-y-2.5 text-sm">
       {/* Row 1 — Level + XP */}
