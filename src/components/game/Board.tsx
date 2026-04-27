@@ -115,7 +115,7 @@ export function Board() {
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
     >
-      <div className="absolute inset-0 rounded-3xl panel-gold p-2 sm:p-3 shadow-popup">
+      <div className="absolute inset-0 rounded-3xl board-glass p-2 sm:p-3 shadow-popup">
         <div
           className="grid gap-1.5 sm:gap-2 h-full"
           style={{ gridTemplateColumns: `repeat(${SIZE}, minmax(0, 1fr))` }}
