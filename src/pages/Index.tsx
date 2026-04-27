@@ -76,12 +76,10 @@ const Index = () => {
             </span>
           </h1>
           {/* Three icons: Share · Score · Diamonds */}
-          <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto">
-            <InviteButton />
-            <LeaderboardButton />
-            <div className="flex justify-center">
-              <TokenCounter />
-            </div>
+          <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto items-center">
+            <div className="flex justify-center"><InviteButton /></div>
+            <div className="flex justify-center"><LeaderboardButton /></div>
+            <div className="flex justify-center"><TokenCounter /></div>
           </div>
         </header>
       )}
