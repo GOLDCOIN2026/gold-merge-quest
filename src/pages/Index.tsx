@@ -11,6 +11,7 @@ import { SellAction } from "@/components/game/SellAction";
 import { InviteButton } from "@/components/game/InviteButton";
 import { LeaderboardButton } from "@/components/game/LeaderboardButton";
 import { ClaimRewardButton } from "@/components/game/ClaimRewardButton";
+import { InfoButton } from "@/components/game/InfoButton";
 import {
   autoSpawnTick,
   comboTick,
@@ -75,11 +76,15 @@ const Index = () => {
               MERGE QUEST
             </span>
           </h1>
-          {/* Three icons: Share · Score · Diamonds */}
+          {/* Three primary icons: Share · Score · Diamonds */}
           <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto items-center">
             <div className="flex justify-center"><InviteButton /></div>
             <div className="flex justify-center"><LeaderboardButton /></div>
             <div className="flex justify-center"><TokenCounter /></div>
+          </div>
+          {/* Subtle "How to Play" chip */}
+          <div className="flex justify-center mt-2">
+            <InfoButton />
           </div>
         </header>
       )}
