@@ -5,11 +5,11 @@
 export const GAME_CONFIG = {
   BOARD_SIZE: 6,
 
-  // ---- Auto item generation (progressive cycle) ----
-  // Cycle of 36 spawns ≈ 7m 30s total (450s).
-  // Linear ramp: spawn 1 = 5.0s → spawn 36 = 20.0s.
-  // After spawn 36 the cycle resets back to 5.0s.
-  AUTO_SPAWN_CYCLE_LENGTH: 36, // resets after this many spawns
+  // ---- Auto item generation (fixed cadence) ----
+  // Every spawn fires 3.0s apart (1.5s under 2× Speed Boost).
+  // The "cycle" concept is preserved purely for HUD display (1..36 → resets).
+  AUTO_SPAWN_INTERVAL_MS: 3000,
+  AUTO_SPAWN_CYCLE_LENGTH: 36,
   AUTO_SPAWN_MAX_LEVEL: 2,     // newly spawned tiles are level 1 or 2
 
   // Combo system
@@ -34,20 +34,18 @@ export const GAME_CONFIG = {
   DOUBLE_REWARDS_DURATION_MS: 10 * 60 * 1000,
 
   // ---- Refill system ----
-  DAILY_AD_REFILLS: 2,         // first 2 refills/day via ads (before referral tier)
-  REFILL_BATCH_LEVEL_1_PROB: 0.85, // probability a refilled tile is level 1 vs 2
+  DAILY_AD_REFILLS: 2,
+  REFILL_BATCH_LEVEL_1_PROB: 0.85,
 
   // ---- Daily login reward ----
   DAILY_REWARD_COINS: 250,
 
   // ---- Sell rewards (Gold Coin Tokens) ----
-  // Levels 1-5 are not sellable.
+  // Only Levels 10/11/12 are sellable.
   SELL_TOKEN_REWARD_BY_LEVEL: {
-    6: 10,
-    7: 15,
-    8: 30,
-    9: 50,
-    10: 100,
+    10: 10,
+    11: 50,
+    12: 100,
   } as Record<number, number>,
 
   // ---- Referral / share ----
@@ -58,21 +56,10 @@ export const GAME_CONFIG = {
 export type GameConfig = typeof GAME_CONFIG;
 
 /**
- * Returns the delay (ms) before the Nth auto-spawn within the current cycle.
- *
- * Smooth linear progression across a 36-spawn cycle:
- *   - Spawn 1  → 5.0s
- *   - Spawn 36 → 20.0s
- *   - Each step grows by 15s / 35 ≈ 0.4286s
- *
- * Total cycle duration ≈ 36·(5+20)/2 = 450,000 ms = 7m 30s ✓
- * After index 35 the engine resets the cycle counter to 0 (back to 5.0s).
+ * Returns the delay (ms) before the next auto-spawn.
+ * Fixed at 3.0s (1.5s under 2× Speed Boost — applied separately by the engine).
+ * The `index` argument is kept for API compatibility but no longer affects timing.
  */
-export function spawnIntervalForIndex(index: number): number {
-  const cycleLen = GAME_CONFIG.AUTO_SPAWN_CYCLE_LENGTH;
-  const within = index % cycleLen;
-  const startMs = 5000;
-  const endMs = 20000;
-  const t = cycleLen <= 1 ? 0 : within / (cycleLen - 1);
-  return Math.round(startMs + (endMs - startMs) * t);
+export function spawnIntervalForIndex(_index: number): number {
+  return GAME_CONFIG.AUTO_SPAWN_INTERVAL_MS;
 }
