@@ -9,17 +9,17 @@ const STEPS = [
   },
   {
     title: "Three Categories",
-    body: "Gold Relics (gold), Blockchain Tech (cyan), and Treasure Artifacts (emerald) — each with 10 evolution tiers. Items only merge with items of the same category and level.",
+    body: "Gold Relics (gold), Blockchain Tech (cyan), and Treasure Artifacts (emerald) — each with 12 evolution tiers. Items only merge with items of the same category and level.",
     emoji: "🎨",
   },
   {
     title: "Items Spawn Automatically",
-    body: "New tiles appear on the board automatically — first every 5s, slowing down to 40s, then resetting. Use Refill or 2× Speed Boost to keep things moving.",
+    body: "A new tile appears every 3 seconds (1.5s during 2× Speed Boost). When the board fills, spawning pauses — clear space by merging.",
     emoji: "⚡",
   },
   {
-    title: "Sell for Tokens",
-    body: "Tap a Level 6+ item to sell it for Gold Coin Tokens — sent straight to your Gold Coin wallet.",
+    title: "Sell for Gold Tokens",
+    body: "Reach Level 10, 11 or 12 to sell items for Gold Tokens. Level 10 = 10 · Level 11 = 50 · Level 12 = 100 tokens.",
     emoji: "💎",
   },
 ];
