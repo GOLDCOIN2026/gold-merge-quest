@@ -188,11 +188,10 @@ function TileVisual({ tile }: { tile: Tile }) {
   return (
     <div
       className={cn(
-        "relative w-full h-full flex items-center justify-center p-1",
+        "relative w-full h-full flex items-center justify-center z-[2]",
         fresh && "animate-spawn",
       )}
       style={{
-        // Faint category-tinted aura behind the icon
         background: `radial-gradient(circle at 50% 55%, ${cat.glow}, transparent 65%)`,
         borderRadius: "0.6rem",
       }}
@@ -202,7 +201,7 @@ function TileVisual({ tile }: { tile: Tile }) {
         alt={item.name}
         loading="lazy"
         draggable={false}
-        className="w-full h-full object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] pointer-events-none"
+        className="w-[92%] h-[92%] object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] pointer-events-none"
       />
       {/* Category dot (top-left) — color-only marker, no text */}
       <span
@@ -210,8 +209,8 @@ function TileVisual({ tile }: { tile: Tile }) {
         style={{ background: cat.hue, boxShadow: `0 0 6px ${cat.hue}` }}
         aria-label={cat.name}
       />
-      {/* Level chip (bottom-right) */}
-      <span className="absolute bottom-0.5 right-1 text-[9px] sm:text-[10px] font-bold text-gold-200 tabular-nums drop-shadow">
+      {/* Level chip (bottom-right) — small but readable */}
+      <span className="absolute bottom-0.5 right-1 text-[9px] sm:text-[10px] font-bold text-gold-100 tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
         {tile.level}
       </span>
     </div>
