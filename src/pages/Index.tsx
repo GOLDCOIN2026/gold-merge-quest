@@ -20,6 +20,9 @@ import {
   useGame,
 } from "@/game/store";
 import { setMuted as setSfxMuted, unlockAudio } from "@/game/sound";
+import { initTelegram } from "@/lib/telegram";
+import { initAuth } from "@/lib/auth";
+import { submitScore, trackTokens, flushScore } from "@/lib/leaderboard";
 
 const Index = () => {
   const muted = useGame(s => s.muted);
