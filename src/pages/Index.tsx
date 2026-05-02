@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Board } from "@/components/game/Board";
-import { CoinCounter, TokenCounter } from "@/components/game/CoinCounter";
+import { TokenCounter } from "@/components/game/CoinCounter";
 import { HUD } from "@/components/game/HUD";
 import { ActionBar } from "@/components/game/ActionBar";
 import { MissionsPanel } from "@/components/game/MissionsPanel";
@@ -10,7 +10,6 @@ import { MainMenu } from "@/components/game/MainMenu";
 import { SellAction } from "@/components/game/SellAction";
 import { InviteButton } from "@/components/game/InviteButton";
 import { LeaderboardButton } from "@/components/game/LeaderboardButton";
-import { ClaimRewardButton } from "@/components/game/ClaimRewardButton";
 import { InfoButton } from "@/components/game/InfoButton";
 import {
   autoSpawnTick,
@@ -64,39 +63,21 @@ const Index = () => {
 
   return (
     <main className="relative min-h-screen w-full px-3 py-3 max-w-[640px] mx-auto flex flex-col gap-3">
-      {/* ---- Top header (sticky, always above board) ---- */}
+      {/* ---- Header — title only ---- */}
       {phase !== "menu" && (
         <header className="sticky top-0 -mx-3 px-3 pt-3 pb-3 z-40 backdrop-blur-md bg-background/70 animate-fade-in border-b border-gold-700/20">
-          {/* Two-line premium title */}
-          <h1 className="text-center mb-3 leading-tight tracking-[0.18em]">
-            <span className="block text-2xl sm:text-3xl font-extrabold text-gold drop-shadow-[0_2px_8px_hsl(43_90%_55%/0.35)]">
+          <h1 className="text-center leading-tight tracking-[0.18em]">
+            <span className="block text-2xl sm:text-3xl font-extrabold text-gold drop-shadow-[0_2px_12px_hsl(43_90%_55%/0.45)]">
               GOLD COIN
             </span>
             <span className="block text-lg sm:text-xl font-bold text-gold-200/90">
               MERGE QUEST
             </span>
           </h1>
-          {/* Three primary icons: Share · Score · Diamonds */}
-          <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto items-center">
-            <div className="flex justify-center"><InviteButton /></div>
-            <div className="flex justify-center"><LeaderboardButton /></div>
-            <div className="flex justify-center"><TokenCounter /></div>
-          </div>
-          {/* Subtle "How to Play" chip */}
-          <div className="flex justify-center mt-2">
-            <InfoButton />
-          </div>
         </header>
       )}
 
-      {/* Score (coins) — single balance row beneath header */}
-      {phase !== "menu" && (
-        <section className="flex items-center justify-center z-20 animate-fade-in">
-          <CoinCounter />
-        </section>
-      )}
-
-      {/* XP + spawn HUD */}
+      {/* XP + spawn status */}
       {phase !== "menu" && (
         <section className="z-20 animate-fade-in">
           <HUD />
@@ -110,21 +91,32 @@ const Index = () => {
         </section>
       )}
 
-      {/* Claim Reward — prominent CTA above the action bar */}
-      {phase !== "menu" && (
-        <section className="z-20 animate-fade-in">
-          <ClaimRewardButton />
-        </section>
-      )}
-
-      {/* Action bar */}
+      {/* Gameplay row — Refill · 2× Speed · (Sell appears via SellAction) */}
       {phase !== "menu" && (
         <section className="z-20 animate-fade-in"><ActionBar /></section>
       )}
 
+      {/* Utility row — Share · Leaderboard · Diamonds */}
+      {phase !== "menu" && (
+        <section className="z-20 animate-fade-in">
+          <div className="grid grid-cols-3 gap-2 items-center">
+            <div className="flex justify-center"><InviteButton /></div>
+            <div className="flex justify-center"><LeaderboardButton /></div>
+            <div className="flex justify-center"><TokenCounter /></div>
+          </div>
+        </section>
+      )}
+
       {/* Missions */}
       {phase !== "menu" && (
-        <section className="z-10 pb-20 animate-fade-in"><MissionsPanel /></section>
+        <section className="z-10 animate-fade-in"><MissionsPanel /></section>
+      )}
+
+      {/* Full-width How to Play */}
+      {phase !== "menu" && (
+        <section className="z-20 pb-6 animate-fade-in">
+          <InfoButton fullWidth />
+        </section>
       )}
 
       <BannerStack />
