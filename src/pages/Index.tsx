@@ -91,7 +91,12 @@ const Index = () => {
         </section>
       )}
 
-      {/* Gameplay row — Refill · 2× Speed · (Sell appears via SellAction) */}
+      {/* Sell button — appears under board when a sellable tile is selected */}
+      {phase !== "menu" && (
+        <section className="z-30 animate-fade-in"><SellAction /></section>
+      )}
+
+      {/* Gameplay row — Refill · 2× Speed */}
       {phase !== "menu" && (
         <section className="z-20 animate-fade-in"><ActionBar /></section>
       )}
@@ -121,7 +126,6 @@ const Index = () => {
 
       <BannerStack />
       <Tutorial />
-      <SellAction />
 
       {/* Main menu — modal-style, covers everything */}
       {phase === "menu" && <MainMenu />}
