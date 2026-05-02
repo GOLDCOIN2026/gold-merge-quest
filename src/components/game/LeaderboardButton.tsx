@@ -17,7 +17,7 @@ export function LeaderboardButton() {
   const [me, setMe] = useState<AuthSnapshot | null>(null);
   const myTokens = useGame(s => s.tokens);
 
-  useEffect(() => onAuth(setMe), []);
+  useEffect(() => { const off = onAuth(setMe); return () => { off(); }; }, []);
 
   useEffect(() => {
     if (!open) return;
