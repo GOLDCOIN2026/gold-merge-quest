@@ -28,8 +28,21 @@ const Index = () => {
   const muted = useGame(s => s.muted);
   const phase = useGame(s => s.phase);
 
-  // Boot — load saved state once. Always boots into the main menu.
-  useEffect(() => { loadFromStorage(); }, []);
+  const tokens = useGame(s => s.tokens);
+  const level = useGame(s => s.level);
+
+  // Boot — load saved state, init Telegram + Firebase Auth (run once).
+  useEffect(() => {
+    loadFromStorage();
+    initTelegram();
+    initAuth();
+  }, []);
+
+  // Push token totals to the global leaderboard (debounced)
+  useEffect(() => {
+    trackTokens(tokens);
+    submitScore(tokens, level);
+  }, [tokens, level]);
 
   // Sync muted state to SFX engine
   useEffect(() => { setSfxMuted(muted); }, [muted]);
@@ -50,7 +63,7 @@ const Index = () => {
 
   // Save before unload + sync referrals on resume
   useEffect(() => {
-    const onHide = () => persistNow();
+    const onHide = () => { persistNow(); flushScore(); };
     const onShow = () => syncReferralCredits();
     window.addEventListener("pagehide", onHide);
     window.addEventListener("beforeunload", onHide);
