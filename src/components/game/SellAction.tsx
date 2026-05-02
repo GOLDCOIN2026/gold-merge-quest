@@ -25,8 +25,8 @@ export function SellAction() {
 
   return (
     <>
-      {/* Floating sell button — brief preview of reward */}
-      <div className="fixed left-1/2 -translate-x-1/2 bottom-4 z-50 animate-banner-in">
+      {/* Inline sell button — sits directly below the board */}
+      <div className="flex justify-center animate-banner-in">
         <Button
           onClick={() => { SFX.click(); setConfirm(true); }}
           className="btn-gold h-14 px-5 rounded-full font-extrabold text-base shadow-gold-strong pulse-gold flex items-center gap-2"
