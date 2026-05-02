@@ -1,9 +1,12 @@
-import { useState } from "react";
-import { Play, X, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Play, X, Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { startGame } from "@/game/store";
 import { closeApp } from "@/game/bridge";
 import { SFX } from "@/game/sound";
+import { onAuth, signInWithGoogle, type AuthSnapshot } from "@/lib/auth";
+import { isTelegram } from "@/lib/telegram";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import logo from "@/assets/gold-coin-logo.png";
 
 /**
@@ -12,6 +15,18 @@ import logo from "@/assets/gold-coin-logo.png";
  */
 export function MainMenu() {
   const [transitioning, setTransitioning] = useState(false);
+  const [me, setMe] = useState<AuthSnapshot | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
+  const inTelegram = isTelegram();
+
+  useEffect(() => { const off = onAuth(setMe); return () => { off(); }; }, []);
+
+  async function handleGoogle() {
+    if (signingIn) return;
+    SFX.click();
+    setSigningIn(true);
+    try { await signInWithGoogle(); } finally { setSigningIn(false); }
+  }
 
   function handlePlay() {
     if (transitioning) return;
