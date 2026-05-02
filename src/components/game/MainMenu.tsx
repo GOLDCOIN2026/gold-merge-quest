@@ -98,10 +98,33 @@ export function MainMenu() {
             <X className="h-4 w-4 mr-2" />
             Quit
           </Button>
+
+          {/* Optional Google sign-in (web only). In Telegram we auto-sign-in via the bot. */}
+          {isFirebaseConfigured && !inTelegram && me?.isAnonymous && (
+            <Button
+              onClick={handleGoogle}
+              disabled={signingIn}
+              variant="outline"
+              className="w-full h-11 text-xs font-bold rounded-2xl border-gold-700/50 bg-secondary/40 hover:bg-secondary text-foreground"
+            >
+              {signingIn ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <LogIn className="h-4 w-4 mr-2" />}
+              Sign in with Google to save progress
+            </Button>
+          )}
         </div>
 
-        <div className="mt-6 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
-          Powered by Gold Coin
+        {/* User pill */}
+        {me && !me.isAnonymous && (
+          <div className="mt-5 inline-flex items-center gap-2 panel-gold rounded-full px-3 py-1.5 text-xs">
+            {me.photo
+              ? <img src={me.photo} alt="" className="h-5 w-5 rounded-full object-cover" referrerPolicy="no-referrer" />
+              : <div className="h-5 w-5 rounded-full bg-gradient-gold" />}
+            <span className="font-semibold text-gold-200 truncate max-w-[160px]">{me.name}</span>
+          </div>
+        )}
+
+        <div className="mt-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+          {inTelegram ? "Telegram Mini App · Powered by Gold Coin" : "Powered by Gold Coin"}
         </div>
       </div>
     </div>
