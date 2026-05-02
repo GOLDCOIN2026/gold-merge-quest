@@ -3,6 +3,7 @@ import { Send, Copy, Share2, Check, X, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/game/store";
 import { getReferralLink, shareText } from "@/game/bridge";
+import { isTelegram, openTelegramShare } from "@/lib/telegram";
 import { SFX } from "@/game/sound";
 
 /**
@@ -40,10 +41,10 @@ export function InviteButton() {
 
   function openTelegram() {
     SFX.click();
-    const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(
-      "🎮 Play Gold Coin Merge Quest with me — earn FREE Gold Coin rewards every day!"
-    )}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    openTelegramShare(
+      link,
+      "🎮 Play Gold Coin Merge Quest with me — earn FREE Gold Coin rewards every day!",
+    );
   }
 
   return (
