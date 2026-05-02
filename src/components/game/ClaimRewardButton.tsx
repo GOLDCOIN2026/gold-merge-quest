@@ -3,6 +3,7 @@ import { Gem, ExternalLink, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/game/store";
 import { GAME_CONFIG } from "@/game/config";
+import { openExternal } from "@/lib/telegram";
 import { SFX } from "@/game/sound";
 
 /**
@@ -19,11 +20,7 @@ export function ClaimRewardButton() {
   function handleProceed() {
     SFX.click();
     setOpen(false);
-    try {
-      window.open(GAME_CONFIG.CLAIM_URL, "_blank", "noopener,noreferrer");
-    } catch {
-      window.location.href = GAME_CONFIG.CLAIM_URL;
-    }
+    openExternal(GAME_CONFIG.CLAIM_URL);
   }
 
   return (
