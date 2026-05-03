@@ -15,6 +15,7 @@ import {
 } from "@/game/store";
 import { showRewardedAd } from "@/game/bridge";
 import { SFX } from "@/game/sound";
+import { SellAction } from "./SellAction";
 
 /**
  * Bottom action bar — Refill + 2× Speed Boost.
