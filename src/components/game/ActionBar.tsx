@@ -15,7 +15,6 @@ import {
 } from "@/game/store";
 import { showRewardedAd } from "@/game/bridge";
 import { SFX } from "@/game/sound";
-import { SellAction } from "./SellAction";
 
 /**
  * Bottom action bar — Refill + 2× Speed Boost.
@@ -120,7 +119,7 @@ export function ActionBar() {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-2 items-stretch">
+      <div className="grid grid-cols-2 gap-2">
         {/* Refill */}
         <Button
           onClick={handleRefill}
@@ -132,8 +131,8 @@ export function ActionBar() {
           ) : (
             <Repeat className="h-5 w-5" />
           )}
-          <span>Refill</span>
-          <span className="text-[10px] font-semibold opacity-90 truncate max-w-full px-1">{refillSubLabel}</span>
+          <span>Refill Board</span>
+          <span className="text-[10px] font-semibold opacity-90">{refillSubLabel}</span>
         </Button>
 
         {/* Speed Boost */}
@@ -154,13 +153,8 @@ export function ActionBar() {
             <Zap className="h-5 w-5 text-cyan-300" />
           )}
           <span className="text-sm font-bold">2× Speed</span>
-          <span className="text-[10px] font-semibold opacity-90 truncate max-w-full px-1">{speedSubLabel}</span>
+          <span className="text-[10px] font-semibold opacity-90">{speedSubLabel}</span>
         </Button>
-
-        {/* Sell — third column. Renders nothing when no sellable tile is selected. */}
-        <div className="h-16 flex items-stretch">
-          <SellAction />
-        </div>
       </div>
 
       {/* Speed boost daily-limit modal */}

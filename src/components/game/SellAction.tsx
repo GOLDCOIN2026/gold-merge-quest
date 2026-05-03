@@ -25,17 +25,22 @@ export function SellAction() {
 
   return (
     <>
-      <Button
-        onClick={() => { SFX.click(); setConfirm(true); }}
-        className="btn-gold h-16 w-full rounded-2xl font-extrabold text-sm shadow-gold-strong pulse-gold flex-col gap-0.5 animate-banner-in"
-      >
-        <Crown className="h-5 w-5" />
-        <span>Sell</span>
-        <span className="text-[10px] font-semibold opacity-90 flex items-center gap-1">
-          <Coins className="h-3 w-3" /> +{reward}
-        </span>
-      </Button>
+      {/* Floating sell button — brief preview of reward */}
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-4 z-50 animate-banner-in">
+        <Button
+          onClick={() => { SFX.click(); setConfirm(true); }}
+          className="btn-gold h-14 px-5 rounded-full font-extrabold text-base shadow-gold-strong pulse-gold flex items-center gap-2"
+        >
+          <Crown className="h-5 w-5" />
+          Sell {getItem(tile.category, tile.level).name}
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/30 ml-1">
+            <Coins className="h-4 w-4" />
+            +{reward}
+          </span>
+        </Button>
+      </div>
 
+      {/* Confirmation dialog */}
       {confirm && <SellConfirm tile={tile} reward={reward} onConfirm={handleSell} onCancel={() => setConfirm(false)} />}
     </>
   );
