@@ -924,7 +924,7 @@ export function claimMission(id: string) {
   if (!m || !m.done || m.claimed) return;
   set(s => ({ missions: s.missions.map(x => x.id === id ? { ...x, claimed: true } : x) }));
   // XP-only economy: missions grant XP equal to their reward value.
-  addXp(m.reward);
+  gainXP(m.reward);
   SFX.coin();
   pushBanner({ title: "Mission Complete!", subtitle: `+${m.reward} XP`, variant: "reward" });
   const remaining = state.missions.filter(x => !x.claimed);
