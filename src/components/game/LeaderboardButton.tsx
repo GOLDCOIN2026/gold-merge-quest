@@ -4,6 +4,30 @@ import { useGame } from "@/game/store";
 import { getLeaderboard, type LeaderboardEntry } from "@/game/bridge";
 import { SFX } from "@/game/sound";
 import { cn } from "@/lib/utils";
+import { db } from "@/lib/firebase";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { useAuth } from "@/auth/AuthContext";
+
+async function getFirebaseLeaderboard(currentUid: string | null): Promise<LeaderboardEntry[] | null> {
+  try {
+    const q = query(collection(db, "users"), orderBy("TTokens", "desc"), limit(50));
+    const snap = await getDocs(q);
+    const entries: LeaderboardEntry[] = [];
+    snap.forEach(doc => {
+      const d = doc.data() as any;
+      entries.push({
+        id: doc.id,
+        name: d.username ?? "Player",
+        tokens: Number(d.TTokens ?? 0),
+        isMe: doc.id === currentUid,
+      });
+    });
+    return entries;
+  } catch (e) {
+    console.warn("Firebase leaderboard unavailable, falling back", e);
+    return null;
+  }
+}
 
 /**
  * Global leaderboard of top players ranked by total Gold Tokens earned.
@@ -15,18 +39,27 @@ export function LeaderboardButton() {
   const [list, setList] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const myTokens = useGame(s => s.tokens);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setLoading(true);
-    getLeaderboard().then(data => {
+    (async () => {
+      const fb = await getFirebaseLeaderboard(user?.uid ?? null);
       if (cancelled) return;
-      setList(data);
+      if (fb && fb.length > 0) {
+        setList(fb);
+        setLoading(false);
+        return;
+      }
+      const local = await getLeaderboard();
+      if (cancelled) return;
+      setList(local);
       setLoading(false);
-    });
+    })();
     return () => { cancelled = true; };
-  }, [open, myTokens]);
+  }, [open, myTokens, user?.uid]);
 
   const myRank = list.findIndex(e => e.isMe) + 1;
 
