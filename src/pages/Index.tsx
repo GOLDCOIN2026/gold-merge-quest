@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Board } from "@/components/game/Board";
-import { CoinCounter, TokenCounter } from "@/components/game/CoinCounter";
+import { TokenCounter } from "@/components/game/CoinCounter";
 import { HUD } from "@/components/game/HUD";
 import { ActionBar } from "@/components/game/ActionBar";
 import { MissionsPanel } from "@/components/game/MissionsPanel";
@@ -12,6 +12,8 @@ import { InviteButton } from "@/components/game/InviteButton";
 import { LeaderboardButton } from "@/components/game/LeaderboardButton";
 import { ClaimRewardButton } from "@/components/game/ClaimRewardButton";
 import { InfoButton } from "@/components/game/InfoButton";
+import { AdSlot } from "@/components/game/AdSlot";
+import { AuthButtons } from "@/auth/AuthButtons";
 import {
   autoSpawnTick,
   comboTick,
@@ -26,27 +28,21 @@ const Index = () => {
   const muted = useGame(s => s.muted);
   const phase = useGame(s => s.phase);
 
-  // Boot — load saved state once. Always boots into the main menu.
   useEffect(() => { loadFromStorage(); }, []);
-
-  // Sync muted state to SFX engine
   useEffect(() => { setSfxMuted(muted); }, [muted]);
 
-  // Game loop ticks
   useEffect(() => {
     const spawn = window.setInterval(autoSpawnTick, 250);
     const combo = window.setInterval(comboTick, 500);
     return () => { clearInterval(spawn); clearInterval(combo); };
   }, []);
 
-  // Unlock audio on first interaction
   useEffect(() => {
     const onTouch = () => { unlockAudio(); window.removeEventListener("pointerdown", onTouch); };
     window.addEventListener("pointerdown", onTouch);
     return () => window.removeEventListener("pointerdown", onTouch);
   }, []);
 
-  // Save before unload + sync referrals on resume
   useEffect(() => {
     const onHide = () => persistNow();
     const onShow = () => syncReferralCredits();
@@ -63,40 +59,33 @@ const Index = () => {
   }, []);
 
   return (
-    <main className="relative min-h-screen w-full px-3 py-3 max-w-[640px] mx-auto flex flex-col gap-3">
-      {/* ---- Top header (sticky, always above board) ---- */}
+    <main className="relative min-h-screen w-full px-3 py-3 pb-24 max-w-[640px] mx-auto flex flex-col gap-3">
+      {/* Header — title left, leaderboard + auth right */}
       {phase !== "menu" && (
         <header className="sticky top-0 -mx-3 px-3 pt-3 pb-3 z-40 backdrop-blur-md bg-background/70 animate-fade-in border-b border-gold-700/20">
-          {/* Two-line premium title */}
-          <h1 className="text-center mb-3 leading-tight tracking-[0.18em]">
-            <span className="block text-2xl sm:text-3xl font-extrabold text-gold drop-shadow-[0_2px_8px_hsl(43_90%_55%/0.35)]">
-              GOLD COIN
-            </span>
-            <span className="block text-lg sm:text-xl font-bold text-gold-200/90">
-              MERGE QUEST
-            </span>
-          </h1>
-          {/* Three primary icons: Share · Score · Diamonds */}
-          <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto items-center">
-            <div className="flex justify-center"><InviteButton /></div>
-            <div className="flex justify-center"><LeaderboardButton /></div>
-            <div className="flex justify-center"><TokenCounter /></div>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="leading-tight tracking-[0.14em] min-w-0">
+              <span className="block text-lg sm:text-xl font-extrabold text-gold drop-shadow-[0_2px_8px_hsl(43_90%_55%/0.35)]">
+                GOLD COIN
+              </span>
+              <span className="block text-xs sm:text-sm font-bold text-gold-200/90">
+                MERGE QUEST
+              </span>
+            </h1>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <LeaderboardButton />
+              <AuthButtons />
+            </div>
           </div>
-          {/* Subtle "How to Play" chip */}
-          <div className="flex justify-center mt-2">
-            <InfoButton />
+
+          {/* Banner ad — non-intrusive, beneath header */}
+          <div className="mt-2">
+            <AdSlot className="bg-secondary/20 border border-gold-700/20" />
           </div>
         </header>
       )}
 
-      {/* Score (coins) — single balance row beneath header */}
-      {phase !== "menu" && (
-        <section className="flex items-center justify-center z-20 animate-fade-in">
-          <CoinCounter />
-        </section>
-      )}
-
-      {/* XP + spawn HUD */}
+      {/* XP / Level + spawn status — glass container */}
       {phase !== "menu" && (
         <section className="z-20 animate-fade-in">
           <HUD />
@@ -110,7 +99,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* Claim Reward — prominent CTA above the action bar */}
+      {/* Claim Reward — prominent CTA */}
       {phase !== "menu" && (
         <section className="z-20 animate-fade-in">
           <ClaimRewardButton />
@@ -122,16 +111,43 @@ const Index = () => {
         <section className="z-20 animate-fade-in"><ActionBar /></section>
       )}
 
+      {/* Share + Diamonds — single horizontal row */}
+      {phase !== "menu" && (
+        <section className="z-20 animate-fade-in grid grid-cols-2 gap-2">
+          <div className="panel-gold rounded-2xl h-12 flex items-center justify-center">
+            <InviteButton />
+          </div>
+          <div className="panel-gold rounded-2xl h-12 flex items-center justify-center">
+            <TokenCounter />
+          </div>
+        </section>
+      )}
+
+      {/* Ad block above missions */}
+      {phase !== "menu" && (
+        <section className="z-10 animate-fade-in">
+          <AdSlot className="bg-secondary/20 border border-gold-700/20" />
+        </section>
+      )}
+
       {/* Missions */}
       {phase !== "menu" && (
-        <section className="z-10 pb-20 animate-fade-in"><MissionsPanel /></section>
+        <section className="z-10 animate-fade-in"><MissionsPanel /></section>
       )}
 
       <BannerStack />
       <Tutorial />
       <SellAction />
 
-      {/* Main menu — modal-style, covers everything */}
+      {/* Full-width "How to Play" pinned to bottom */}
+      {phase !== "menu" && (
+        <div className="fixed left-0 right-0 bottom-0 z-30 px-3 pb-3 pt-2 bg-gradient-to-t from-background via-background/90 to-transparent">
+          <div className="max-w-[640px] mx-auto">
+            <InfoButton fullWidth />
+          </div>
+        </div>
+      )}
+
       {phase === "menu" && <MainMenu />}
     </main>
   );

@@ -8,7 +8,7 @@ import { SFX } from "@/game/sound";
  * referral benefits in one place. Triggered from a small "?" chip in the
  * header so it doesn't crowd the three primary top icons.
  */
-export function InfoButton() {
+export function InfoButton({ fullWidth = false }: { fullWidth?: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -16,9 +16,13 @@ export function InfoButton() {
       <button
         onClick={() => { SFX.click(); setOpen(true); }}
         aria-label="Game rules"
-        className="panel-gold h-8 px-2.5 rounded-full flex items-center gap-1 text-[11px] font-semibold text-gold-200 hover:shadow-gold transition-shadow"
+        className={
+          fullWidth
+            ? "btn-gold w-full h-12 rounded-2xl flex items-center justify-center gap-2 text-sm font-extrabold shadow-gold-strong"
+            : "panel-gold h-8 px-2.5 rounded-full flex items-center gap-1 text-[11px] font-semibold text-gold-200 hover:shadow-gold transition-shadow"
+        }
       >
-        <Info className="h-3.5 w-3.5" /> How to Play
+        <Info className={fullWidth ? "h-5 w-5" : "h-3.5 w-3.5"} /> How to Play
       </button>
 
       {open && (

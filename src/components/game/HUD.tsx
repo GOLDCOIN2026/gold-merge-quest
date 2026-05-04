@@ -119,19 +119,6 @@ export function HUD() {
         </div>
       )}
 
-      {/* Daily cap */}
-      <div>
-        <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
-          <span>Daily earnings</span>
-          <span className="tabular-nums">{earnedToday.toLocaleString()} / {cap.toLocaleString()}</span>
-        </div>
-        <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-gold-600 to-gold-300 transition-all"
-            style={{ width: `${capPct}%` }}
-          />
-        </div>
-      </div>
     </div>
   );
 }
