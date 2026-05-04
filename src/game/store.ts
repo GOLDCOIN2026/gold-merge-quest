@@ -923,9 +923,10 @@ export function claimMission(id: string) {
   const m = state.missions.find(x => x.id === id);
   if (!m || !m.done || m.claimed) return;
   set(s => ({ missions: s.missions.map(x => x.id === id ? { ...x, claimed: true } : x) }));
-  awardCoins(m.reward, null);
+  // XP-only economy: missions grant XP equal to their reward value.
+  addXp(m.reward);
   SFX.coin();
-  pushBanner({ title: "Mission Complete!", subtitle: `+${m.reward} coins`, variant: "reward" });
+  pushBanner({ title: "Mission Complete!", subtitle: `+${m.reward} XP`, variant: "reward" });
   const remaining = state.missions.filter(x => !x.claimed);
   if (remaining.length === 0) set({ missions: makeMissions(state.level) });
   schedulePersist();
