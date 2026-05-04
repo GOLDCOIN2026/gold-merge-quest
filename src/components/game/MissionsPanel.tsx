@@ -1,7 +1,7 @@
 import { useGame, claimMission } from "@/game/store";
 import { getItem, getCategory } from "@/game/items";
 import { Button } from "@/components/ui/button";
-import { Coins, CheckCircle2 } from "lucide-react";
+import { Sparkles, CheckCircle2 } from "lucide-react";
 
 export function MissionsPanel() {
   const missions = useGame(s => s.missions);
@@ -31,7 +31,7 @@ export function MissionsPanel() {
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
               <div className="flex items-center gap-1 text-gold-300 text-xs font-bold">
-                <Coins className="h-3 w-3" /> {m.reward}
+                <Sparkles className="h-3 w-3" /> {m.reward} XP
               </div>
               {m.claimed ? (
                 <CheckCircle2 className="h-5 w-5 text-emerald-400" />
