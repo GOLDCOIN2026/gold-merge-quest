@@ -13,6 +13,7 @@ import {
 } from "@/game/store";
 import { showRewardedAd } from "@/game/bridge";
 import { SFX } from "@/game/sound";
+import { useAuth } from "@/auth/AuthContext";
 
 /**
  * Bottom action bar — Refill + 2× Speed Boost.
