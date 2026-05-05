@@ -15,7 +15,13 @@ export interface UserProfile {
   username: string;
   email: string;
   referralCode: string;
-  TTokens: number;
+  referralCount: number;
+  Tokens: number;
+  /** Legacy mirror — keep so older docs continue to work. */
+  TTokens?: number;
+  refillUsedToday: number;
+  boostUsedToday: number;
+  lastResetTimestamp: number;
   xp: number;
   level: number;
   createdAt: number;
