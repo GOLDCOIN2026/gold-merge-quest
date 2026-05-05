@@ -955,16 +955,15 @@ export interface SpeedBoostEligibility {
 }
 
 export function getSpeedBoostEligibility(): SpeedBoostEligibility {
-  const free = !!state.dailyFreeUses.speedBoost;
   const used = state.dailyFreeUses.speedBoostAdUses ?? 0;
   const max = GAME_CONFIG.SPEED_BOOST_MAX_AD_USES_PER_DAY;
   const left = Math.max(0, max - used);
   return {
-    freeAvailable: free,
+    freeAvailable: false,
     adUsesUsed: used,
     adUsesMax: max,
     adUsesLeft: left,
-    canActivate: free || left > 0,
+    canActivate: left > 0,
   };
 }
 
