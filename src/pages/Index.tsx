@@ -77,11 +77,6 @@ const Index = () => {
               <AuthButtons />
             </div>
           </div>
-
-          {/* Banner ad — non-intrusive, beneath header */}
-          <div className="mt-2">
-            <AdSlot className="bg-secondary/20 border border-gold-700/20" />
-          </div>
         </header>
       )}
 

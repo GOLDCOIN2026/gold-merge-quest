@@ -15,7 +15,13 @@ export interface UserProfile {
   username: string;
   email: string;
   referralCode: string;
-  TTokens: number;
+  referralCount: number;
+  Tokens: number;
+  /** Legacy mirror — keep so older docs continue to work. */
+  TTokens?: number;
+  refillUsedToday: number;
+  boostUsedToday: number;
+  lastResetTimestamp: number;
   xp: number;
   level: number;
   createdAt: number;
@@ -78,7 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username,
       email,
       referralCode: genReferralCode(username),
+      referralCount: 0,
+      Tokens: 0,
       TTokens: 0,
+      refillUsedToday: 0,
+      boostUsedToday: 0,
+      lastResetTimestamp: Date.now(),
       xp: 0,
       level: 1,
       createdAt: Date.now(),

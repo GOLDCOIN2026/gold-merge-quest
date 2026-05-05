@@ -204,7 +204,7 @@ function seedBoard(): (Tile | null)[] {
 }
 
 function freshDailyFreeUses(): DailyFreeUses {
-  return { speedBoost: true, speedBoostAdUses: 0 };
+  return { speedBoost: false, speedBoostAdUses: 0 };
 }
 
 function defaultUnlocked(): Record<CategoryId, number> {
@@ -817,8 +817,10 @@ export function comboTick() {
 
 // -------------------- refill --------------------
 export interface RefillEligibility {
-  /** Number of free ad refills left today (0..DAILY_AD_REFILLS). */
-  adRefillsLeftToday: number;
+  /** Refills used today (ad + referral combined). Cap = DAILY_REFILLS_MAX. */
+  refillsUsedToday: number;
+  refillsMax: number;
+  refillsLeftToday: number;
   /** Permanent referral credits available. */
   referralCredits: number;
   /** True if the player can refill at all right now. */
@@ -829,26 +831,27 @@ export interface RefillEligibility {
   emptyCells: number;
   /**
    * Refill priority for the NEXT refill:
-   *  - "ad-free"   → first DAILY_AD_REFILLS/day, ad-gated, free
    *  - "referral"  → consumes a referral credit, no ad
-   *  - "ad-extra"  → all credits exhausted; extra refills always require an ad
+   *  - "ad"        → requires a rewarded ad
    */
-  nextRefillSource: "ad-free" | "referral" | "ad-extra";
+  nextRefillSource: "referral" | "ad";
 }
 
 export function getRefillEligibility(): RefillEligibility {
   const empty = state.board.filter(c => c == null).length;
-  const adLeft = Math.max(0, GAME_CONFIG.DAILY_AD_REFILLS - state.refillsUsedToday);
+  const max = GAME_CONFIG.DAILY_REFILLS_MAX;
+  const used = state.refillsUsedToday;
+  const left = Math.max(0, max - used);
   const referral = state.referralRefillCredits;
   const next: RefillEligibility["nextRefillSource"] =
-    adLeft > 0 ? "ad-free" : referral > 0 ? "referral" : "ad-extra";
+    referral > 0 ? "referral" : "ad";
   return {
-    adRefillsLeftToday: adLeft,
+    refillsUsedToday: used,
+    refillsMax: max,
+    refillsLeftToday: left,
     referralCredits: referral,
-    // Refills are ALWAYS available now: when ad-free + referral are exhausted,
-    // the player can still watch a rewarded ad for an "extra" refill.
-    canRefill: empty > 0,
-    needsAd: next !== "referral",
+    canRefill: empty > 0 && left > 0,
+    needsAd: next === "ad",
     emptyCells: empty,
     nextRefillSource: next,
   };
@@ -858,7 +861,7 @@ export function getRefillEligibility(): RefillEligibility {
  * Fill every empty cell with a new low-tier tile.
  * `source` controls which counter / credit is consumed (or none, for auto refills).
  */
-function doRefill(source: "ad" | "referral" | "ad-extra" | "auto", reason?: string): number {
+function doRefill(source: "ad" | "referral" | "auto", reason?: string): number {
   const board = state.board.slice();
   let placed = 0;
   for (let i = 0; i < board.length; i++) {
@@ -871,7 +874,7 @@ function doRefill(source: "ad" | "referral" | "ad-extra" | "auto", reason?: stri
   if (placed === 0) return 0;
   set(s => ({
     board,
-    refillsUsedToday: source === "ad" ? s.refillsUsedToday + 1 : s.refillsUsedToday,
+    refillsUsedToday: source === "auto" ? s.refillsUsedToday : s.refillsUsedToday + 1,
     referralRefillCredits: source === "referral"
       ? Math.max(0, s.referralRefillCredits - 1)
       : s.referralRefillCredits,
@@ -893,29 +896,23 @@ export function doAutoRefill(reason: string): number {
   return doRefill("auto", reason);
 }
 
-/** Use the next free ad-based refill. Caller must have already shown the ad. */
+/** Use a refill, paid for by a rewarded ad. Caller must have already shown the ad. */
 export function consumeAdRefill(): number {
   const e = getRefillEligibility();
-  if (e.emptyCells === 0 || e.adRefillsLeftToday <= 0) return 0;
+  if (!e.canRefill) return 0;
   return doRefill("ad");
 }
 
 /** Use one referral refill credit. */
 export function consumeReferralRefill(): number {
   const e = getRefillEligibility();
-  if (e.emptyCells === 0 || e.referralCredits <= 0) return 0;
+  if (!e.canRefill || e.referralCredits <= 0) return 0;
   return doRefill("referral");
 }
 
-/**
- * Extra ad-gated refill — used after both daily free refills AND
- * referral credits are exhausted. Caller must have already shown the ad.
- * Doesn't increment refillsUsedToday (those are reserved for the free tier).
- */
+/** Back-compat: extra ad refill behaves the same as `consumeAdRefill` now. */
 export function consumeExtraAdRefill(): number {
-  const e = getRefillEligibility();
-  if (e.emptyCells === 0) return 0;
-  return doRefill("ad-extra");
+  return consumeAdRefill();
 }
 
 // -------------------- missions / daily --------------------
@@ -955,16 +952,15 @@ export interface SpeedBoostEligibility {
 }
 
 export function getSpeedBoostEligibility(): SpeedBoostEligibility {
-  const free = !!state.dailyFreeUses.speedBoost;
   const used = state.dailyFreeUses.speedBoostAdUses ?? 0;
   const max = GAME_CONFIG.SPEED_BOOST_MAX_AD_USES_PER_DAY;
   const left = Math.max(0, max - used);
   return {
-    freeAvailable: free,
+    freeAvailable: false,
     adUsesUsed: used,
     adUsesMax: max,
     adUsesLeft: left,
-    canActivate: free || left > 0,
+    canActivate: left > 0,
   };
 }
 
@@ -989,7 +985,7 @@ export function activateSpeedBoost() {
   set({ speedBoostUntil: Date.now() + GAME_CONFIG.SPEED_BOOST_DURATION_MS });
   pushBanner({
     title: "2× Speed Boost!",
-    subtitle: `Spawns at double speed for 2 min`,
+    subtitle: `Spawns at 1.5s for 1 min`,
     variant: "reward",
   });
   SFX.boost();

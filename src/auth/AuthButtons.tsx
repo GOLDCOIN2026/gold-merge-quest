@@ -148,7 +148,7 @@ export function AuthButtons() {
               <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
             </div>
           </div>
-          <Stat label="TTokens" value={(profile?.TTokens ?? tokens).toLocaleString()} />
+          <Stat label="Tokens" value={(profile?.Tokens ?? profile?.TTokens ?? tokens).toLocaleString()} />
           <Stat label="Level" value={String(profile?.level ?? level)} />
           <Stat label="XP" value={(profile?.xp ?? xp).toLocaleString()} />
           {profile?.referralCode && (
