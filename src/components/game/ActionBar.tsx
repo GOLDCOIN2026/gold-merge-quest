@@ -37,6 +37,7 @@ export function ActionBar() {
   useGame(s => s.refillsUsedToday);
   useGame(s => s.referralRefillCredits);
   useGame(s => s.dailyFreeUses);
+  const { profile } = useAuth();
   const [adLoading, setAdLoading] = useState<"speed" | "refill" | null>(null);
   const [boostExhausted, setBoostExhausted] = useState(false);
 
