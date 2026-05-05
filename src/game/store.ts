@@ -989,7 +989,7 @@ export function activateSpeedBoost() {
   set({ speedBoostUntil: Date.now() + GAME_CONFIG.SPEED_BOOST_DURATION_MS });
   pushBanner({
     title: "2× Speed Boost!",
-    subtitle: `Spawns at double speed for 2 min`,
+    subtitle: `Spawns at 1.5s for 1 min`,
     variant: "reward",
   });
   SFX.boost();
