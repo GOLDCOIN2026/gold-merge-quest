@@ -1,14 +1,12 @@
 import { useState } from "react";
-import { Zap, Sparkles, Repeat, Users, Loader2, Tv } from "lucide-react";
+import { Zap, Sparkles, Repeat, Loader2, Tv } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useGame,
   activateSpeedBoost,
-  consumeFreeSpeedBoost,
   consumeAdSpeedBoost,
   consumeAdRefill,
   consumeReferralRefill,
-  consumeExtraAdRefill,
   getRefillEligibility,
   getSpeedBoostEligibility,
   selectors,
@@ -18,24 +16,26 @@ import { SFX } from "@/game/sound";
 
 /**
  * Bottom action bar — Refill + 2× Speed Boost.
- * The manual Generate button has been removed; items now spawn automatically.
  *
- * Refill priority:
- *   1) DAILY_AD_REFILLS free refills/day (ad-gated)
- *   2) Referral refill credits (no ad)
- *   3) Extra ad-gated refills (unlimited fallback)
+ * Refill rules:
+ *   - Max 2 uses per 24 hours.
+ *   - If referral credit is available → consumes credit (no ad).
+ *   - Otherwise → requires a rewarded ad.
+ *   - "Refill (X)" label, where X = referral credits remaining.
  *
  * Speed boost rules:
- *   - 1 free use/day
- *   - Up to 3 ad-based uses/day after that
+ *   - Max 2 uses per 24 hours.
+ *   - Always requires a rewarded ad (no free use).
+ *   - Boosts spawn rate to 1.5s for 1 minute.
  */
 export function ActionBar() {
   const phase = useGame(s => s.phase);
-  const dailyFree = useGame(s => s.dailyFreeUses);
-  const refillsUsedToday = useGame(s => s.refillsUsedToday);
-  const referralCredits = useGame(s => s.referralRefillCredits);
   const speedActive = useGame(selectors.speedActive);
   const board = useGame(s => s.board);
+  // Subscribe to refill counters so the button label re-renders.
+  useGame(s => s.refillsUsedToday);
+  useGame(s => s.referralRefillCredits);
+  useGame(s => s.dailyFreeUses);
   const [adLoading, setAdLoading] = useState<"speed" | "refill" | null>(null);
   const [boostExhausted, setBoostExhausted] = useState(false);
 
@@ -49,11 +49,6 @@ export function ActionBar() {
   async function handleSpeedBoost() {
     if (disabled || speedActive || adLoading) return;
     SFX.click();
-    if (sb.freeAvailable) {
-      consumeFreeSpeedBoost();
-      activateSpeedBoost();
-      return;
-    }
     if (sb.adUsesLeft <= 0) {
       setBoostExhausted(true);
       SFX.error();
@@ -74,48 +69,41 @@ export function ActionBar() {
   async function handleRefill() {
     if (disabled || adLoading) return;
     if (empty === 0) { SFX.error(); return; }
+    if (e.refillsLeftToday <= 0) { SFX.error(); return; }
     SFX.click();
 
-    // Tier 1: Free ad-based refills
-    if (e.nextRefillSource === "ad-free") {
-      setAdLoading("refill");
-      const ok = await showRewardedAd();
-      setAdLoading(null);
-      if (!ok) { SFX.error(); return; }
-      consumeAdRefill();
-      return;
-    }
-    // Tier 2: Referral credits — no ad
     if (e.nextRefillSource === "referral") {
       consumeReferralRefill();
       return;
     }
-    // Tier 3: Extra ad refill — always available as a fallback
     setAdLoading("refill");
     const ok = await showRewardedAd();
     setAdLoading(null);
     if (!ok) { SFX.error(); return; }
-    consumeExtraAdRefill();
+    consumeAdRefill();
   }
 
   // Speed-button label helper
   const speedSubLabel = speedActive
     ? "Active"
-    : sb.freeAvailable
-      ? "Free today"
-      : sb.adUsesLeft > 0
-        ? `Watch ad · ${sb.adUsesLeft}/${sb.adUsesMax} left`
-        : "Daily limit reached";
+    : sb.adUsesLeft > 0
+      ? `Watch ad · ${sb.adUsesUsed}/${sb.adUsesMax} used`
+      : "Daily limit reached";
 
   // Refill label helper
   const refillSubLabel =
     empty === 0
       ? "Board full"
-      : e.nextRefillSource === "ad-free"
-        ? `Watch ad · ${e.adRefillsLeftToday}/2 free`
+      : e.refillsLeftToday <= 0
+        ? "Daily limit reached"
         : e.nextRefillSource === "referral"
-          ? `Use credit · ${e.referralCredits} avail.`
-          : "Watch ad · extra refill";
+          ? `Use credit · ${e.refillsUsedToday}/${e.refillsMax} used`
+          : `Watch ad · ${e.refillsUsedToday}/${e.refillsMax} used`;
+
+  const refillBtnDisabled =
+    disabled || adLoading !== null || empty === 0 || e.refillsLeftToday <= 0;
+  const speedBtnDisabled =
+    disabled || speedActive || adLoading !== null || sb.adUsesLeft <= 0;
 
   return (
     <>
@@ -123,36 +111,33 @@ export function ActionBar() {
         {/* Refill */}
         <Button
           onClick={handleRefill}
-          disabled={disabled || adLoading !== null || empty === 0}
-          className="btn-gold h-16 text-sm font-extrabold rounded-2xl flex-col gap-0.5 relative overflow-hidden"
+          disabled={refillBtnDisabled}
+          className="btn-gold h-16 text-sm font-extrabold rounded-2xl flex-col gap-0.5 relative overflow-hidden transition-all disabled:opacity-50"
         >
           {adLoading === "refill" ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
             <Repeat className="h-5 w-5" />
           )}
-          <span>Refill Board</span>
+          <span>Refill ({e.referralCredits})</span>
           <span className="text-[10px] font-semibold opacity-90">{refillSubLabel}</span>
         </Button>
 
         {/* Speed Boost */}
         <Button
           onClick={handleSpeedBoost}
-          disabled={disabled || speedActive || adLoading !== null || (!sb.freeAvailable && sb.adUsesLeft <= 0)}
+          disabled={speedBtnDisabled}
           variant="outline"
-          className="h-16 flex-col gap-0.5 rounded-2xl border-cyan-400/40 bg-cyan-950/30 hover:bg-cyan-900/40 text-foreground hover:text-cyan-200 relative overflow-hidden"
+          className="h-16 flex-col gap-0.5 rounded-2xl border-cyan-400/40 bg-cyan-950/30 hover:bg-cyan-900/40 text-foreground hover:text-cyan-200 relative overflow-hidden transition-all disabled:opacity-50"
         >
-          {sb.freeAvailable && !speedActive && (
-            <span className="absolute top-1 right-1 px-1.5 py-0.5 text-[8px] font-extrabold rounded-full bg-gradient-gold text-primary-foreground shadow-gold">
-              FREE
-            </span>
-          )}
           {adLoading === "speed" ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
             <Zap className="h-5 w-5 text-cyan-300" />
           )}
-          <span className="text-sm font-bold">2× Speed</span>
+          <span className="text-sm font-bold">
+            Boost ({sb.adUsesLeft}/{sb.adUsesMax})
+          </span>
           <span className="text-[10px] font-semibold opacity-90">{speedSubLabel}</span>
         </Button>
       </div>
@@ -172,7 +157,7 @@ export function ActionBar() {
             </div>
             <h2 className="text-lg font-extrabold text-gold mb-1">Daily Limit Reached</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              You've used today's free boost and all {sb.adUsesMax} ad-based 2× Speed boosts.
+              You've used all {sb.adUsesMax} of today's 2× Speed boosts.
               Come back tomorrow for a fresh allowance.
             </p>
             <Button
@@ -181,11 +166,6 @@ export function ActionBar() {
             >
               <Sparkles className="h-4 w-4 mr-2" /> Got it
             </Button>
-            <div className="mt-3 text-[10px] text-muted-foreground">
-              <Users className="h-3 w-3 inline -mt-0.5 mr-1" />
-              {referralCredits} referral credit{referralCredits === 1 ? "" : "s"} ·
-              {" "}{refillsUsedToday}/2 free refills used
-            </div>
           </div>
         </div>
       )}
