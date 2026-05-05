@@ -24,16 +24,17 @@ export const GAME_CONFIG = {
   DAILY_COIN_CAP: 5000,
 
   // ---- Speed Boost ----
-  // Doubles spawn rate (halves intervals) for 2 minutes.
-  // 1 free use/day + up to 3 rewarded-ad uses/day.
+  // Doubles spawn rate (3s → 1.5s) for 1 minute.
+  // Up to 2 rewarded-ad uses/day, no free use.
   SPEED_BOOST_MULTIPLIER: 2,
-  SPEED_BOOST_DURATION_MS: 2 * 60 * 1000,
-  SPEED_BOOST_MAX_AD_USES_PER_DAY: 3,
+  SPEED_BOOST_DURATION_MS: 60 * 1000,
+  SPEED_BOOST_MAX_AD_USES_PER_DAY: 2,
 
   // Daily double-rewards booster (kept from previous build)
   DOUBLE_REWARDS_DURATION_MS: 10 * 60 * 1000,
 
   // ---- Refill system ----
+  DAILY_REFILLS_MAX: 2,
   DAILY_AD_REFILLS: 2,
   REFILL_BATCH_LEVEL_1_PROB: 0.85,
 
