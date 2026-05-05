@@ -10,15 +10,22 @@ import { useAuth } from "@/auth/AuthContext";
 
 async function getFirebaseLeaderboard(currentUid: string | null): Promise<LeaderboardEntry[] | null> {
   try {
-    const q = query(collection(db, "users"), orderBy("TTokens", "desc"), limit(50));
-    const snap = await getDocs(q);
+    // Prefer the new "Tokens" field; fall back to legacy "TTokens" if needed.
+    let snap;
+    try {
+      const q = query(collection(db, "users"), orderBy("Tokens", "desc"), limit(50));
+      snap = await getDocs(q);
+    } catch {
+      const q = query(collection(db, "users"), orderBy("TTokens", "desc"), limit(50));
+      snap = await getDocs(q);
+    }
     const entries: LeaderboardEntry[] = [];
     snap.forEach(doc => {
       const d = doc.data() as any;
       entries.push({
         id: doc.id,
         name: d.username ?? "Player",
-        tokens: Number(d.TTokens ?? 0),
+        tokens: Number(d.Tokens ?? d.TTokens ?? 0),
         isMe: doc.id === currentUid,
       });
     });
