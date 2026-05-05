@@ -121,7 +121,7 @@ export function ActionBar() {
           ) : (
             <Repeat className="h-5 w-5" />
           )}
-          <span>Refill ({e.referralCredits})</span>
+          <span>Refill ({profile?.referralCount ?? e.referralCredits})</span>
           <span className="text-[10px] font-semibold opacity-90">{refillSubLabel}</span>
         </Button>
 
