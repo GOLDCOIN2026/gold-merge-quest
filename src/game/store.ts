@@ -204,7 +204,7 @@ function seedBoard(): (Tile | null)[] {
 }
 
 function freshDailyFreeUses(): DailyFreeUses {
-  return { speedBoost: true, speedBoostAdUses: 0 };
+  return { speedBoost: false, speedBoostAdUses: 0 };
 }
 
 function defaultUnlocked(): Record<CategoryId, number> {
