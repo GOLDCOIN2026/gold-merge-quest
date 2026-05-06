@@ -190,6 +190,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
         {children}
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
