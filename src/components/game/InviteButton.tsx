@@ -36,7 +36,7 @@ export function InviteButton() {
   async function handleCopy() {
     SFX.click();
     try {
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(referralCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
