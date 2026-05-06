@@ -283,6 +283,7 @@ interface SaveBlob {
   dailyFreeUses: DailyFreeUses;
   refillsUsedToday: number;
   referralRefillCredits: number;
+  referralRefillsUsed: number;
   lastReferralCountSeen: number;
   spawnIndex: number;
   nextSpawnAt: number;
