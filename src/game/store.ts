@@ -824,14 +824,14 @@ export function comboTick() {
 // -------------------- refill --------------------
 /**
  * Referral pool size — sourced from Firebase profile.referralCount.
- * Set via setReferralPoolSize() from the auth-aware UI layer.
+ * Stored on state so selector subscribers re-render on change.
  */
-let referralPoolSize = 0;
 export function setReferralPoolSize(n: number) {
-  referralPoolSize = Math.max(0, Math.floor(n || 0));
-  notify(); // re-render eligibility-driven UI
+  const v = Math.max(0, Math.floor(n || 0));
+  if (state.referralPoolSize === v) return;
+  set({ referralPoolSize: v });
 }
-export function getReferralPoolSize() { return referralPoolSize; }
+export function getReferralPoolSize() { return state.referralPoolSize; }
 
 export interface RefillEligibility {
   /** Refill mode for the next press. */
