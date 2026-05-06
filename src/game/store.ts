@@ -366,6 +366,7 @@ export function loadFromStorage() {
     selectedCell: null,
     // Reset daily-reset things at day rollover
     refillsUsedToday: isNewDay ? 0 : blob.refillsUsedToday,
+    referralRefillsUsed: blob.referralRefillsUsed ?? 0,
     dailyFreeUses: migratedDaily,
     // Spawn schedule resumes from saved cycle position so timers
     // *appear* to keep ticking even while the app was closed.
