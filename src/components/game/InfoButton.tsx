@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Info, X, Sparkles, Zap, Repeat, Users, Crown, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SFX } from "@/game/sound";
+import { ModalPortal } from "@/components/game/ModalPortal";
 
 /**
  * Rules / Info popup. Explains merge mechanics, sell tiers, boosts and
@@ -25,10 +26,12 @@ export function InfoButton({ fullWidth = false }: { fullWidth?: boolean }) {
         <Info className={fullWidth ? "h-5 w-5" : "h-3.5 w-3.5"} /> How to Play
       </button>
 
-      {open && (
+      <ModalPortal open={open} onClose={() => setOpen(false)}>
         <div
-          className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-fade-in"
           onClick={() => setOpen(false)}
+          role="dialog"
+          aria-modal="true"
         >
           <div
             className="panel-gold rounded-3xl p-5 sm:p-6 w-full max-w-md max-h-[88vh] flex flex-col shadow-popup animate-scale-in"
@@ -106,7 +109,7 @@ export function InfoButton({ fullWidth = false }: { fullWidth?: boolean }) {
             </Button>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </>
   );
 }

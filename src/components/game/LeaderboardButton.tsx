@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { useAuth } from "@/auth/AuthContext";
+import { ModalPortal } from "@/components/game/ModalPortal";
 
 async function getFirebaseLeaderboard(currentUid: string | null): Promise<LeaderboardEntry[] | null> {
   try {
@@ -81,10 +82,12 @@ export function LeaderboardButton() {
         <span className="hidden xs:inline">Top</span>
       </button>
 
-      {open && (
+      <ModalPortal open={open} onClose={() => setOpen(false)}>
         <div
-          className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-fade-in"
           onClick={() => setOpen(false)}
+          role="dialog"
+          aria-modal="true"
         >
           <div
             className="panel-gold rounded-3xl p-5 w-full max-w-md max-h-[85vh] flex flex-col shadow-popup animate-scale-in"
@@ -129,7 +132,7 @@ export function LeaderboardButton() {
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </>
   );
 }
