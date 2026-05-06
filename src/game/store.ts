@@ -242,6 +242,7 @@ function defaultState(): GameState {
     referralRefillCredits: 0,
     referralRefillsUsed: 0,
     lastReferralCountSeen: 0,
+    referralPoolSize: 0,
     selectedCell: null,
     tutorialStep: 0,
     muted: false,
