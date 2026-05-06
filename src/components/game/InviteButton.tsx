@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Send, Copy, Share2, Check, X, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/game/store";
-import { getReferralLink, shareText } from "@/game/bridge";
+import { shareText } from "@/game/bridge";
 import { SFX } from "@/game/sound";
 import { ModalPortal } from "@/components/game/ModalPortal";
+import { useAuth } from "@/auth/AuthContext";
+
+const SHARE_URL = "https://t.me/GCMQBot";
 
 /**
  * Telegram-style invitation system.
@@ -12,12 +15,14 @@ import { ModalPortal } from "@/components/game/ModalPortal";
  */
 export function InviteButton() {
   const referralCredits = useGame(s => s.referralRefillCredits);
+  const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [link] = useState(() => getReferralLink());
+  const referralCode = profile?.referralCode || "GUEST";
+  const link = SHARE_URL;
 
   const inviteText =
-    `🎮 Play Gold Coin Merge Quest with me — earn FREE Gold Coin rewards every day! ${link}`;
+    `Join GOLD COIN MERGE QUEST and make free Tokens. Challenge your friend and top the leaderboard. Use referral Code: ${referralCode} ${SHARE_URL}`;
 
   async function handleShare() {
     SFX.click();
@@ -31,7 +36,7 @@ export function InviteButton() {
   async function handleCopy() {
     SFX.click();
     try {
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(referralCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -41,8 +46,8 @@ export function InviteButton() {
 
   function openTelegram() {
     SFX.click();
-    const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(
-      "🎮 Play Gold Coin Merge Quest with me — earn FREE Gold Coin rewards every day!"
+    const url = `https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(
+      `Join GOLD COIN MERGE QUEST and make free Tokens. Challenge your friend and top the leaderboard. Use referral Code: ${referralCode}`
     )}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -94,18 +99,19 @@ export function InviteButton() {
             </div>
 
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Your referral link
+              Your referral code
             </label>
-            <div className="mt-1 mb-3 panel-gold rounded-xl px-3 py-2 flex items-center gap-2">
-              <span className="flex-1 text-xs font-mono text-gold-200 truncate">{link}</span>
+            <div className="mt-1 mb-2 panel-gold rounded-xl px-3 py-2 flex items-center gap-2">
+              <span className="flex-1 text-sm font-mono font-bold text-gold tracking-widest">{referralCode}</span>
               <button
                 onClick={handleCopy}
                 className="h-8 w-8 rounded-lg bg-gradient-gold text-primary-foreground flex items-center justify-center shadow-gold shrink-0"
-                aria-label="Copy link"
+                aria-label="Copy"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </button>
             </div>
+            <div className="mb-3 text-[11px] text-muted-foreground text-center font-mono truncate">{SHARE_URL}</div>
 
             <div className="grid grid-cols-2 gap-2">
               <Button
