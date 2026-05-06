@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useGame } from "@/game/store";
 import { getReferralLink, shareText } from "@/game/bridge";
 import { SFX } from "@/game/sound";
+import { ModalPortal } from "@/components/game/ModalPortal";
 
 /**
  * Telegram-style invitation system.
@@ -57,10 +58,12 @@ export function InviteButton() {
         <span className="hidden xs:inline">Invite</span>
       </button>
 
-      {open && (
+      <ModalPortal open={open} onClose={() => setOpen(false)}>
         <div
-          className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in"
+          className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in"
           onClick={() => setOpen(false)}
+          role="dialog"
+          aria-modal="true"
         >
           <div
             className="panel-gold rounded-3xl p-6 w-full max-w-sm shadow-popup animate-scale-in"
@@ -125,7 +128,7 @@ export function InviteButton() {
             </p>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </>
   );
 }

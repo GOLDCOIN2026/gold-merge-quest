@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "./AuthContext";
 import { useGame } from "@/game/store";
 import { SFX } from "@/game/sound";
+import { ModalPortal } from "@/components/game/ModalPortal";
 
 type Mode = null | "login" | "register" | "profile";
 
@@ -169,9 +170,12 @@ export function AuthButtons() {
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
+    <ModalPortal open onClose={onClose}>
     <div
-      className="fixed inset-0 z-[130] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
     >
       <div
         className="panel-gold rounded-3xl p-5 w-full max-w-sm shadow-popup animate-scale-in space-y-3"
