@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Send, Copy, Share2, Check, X, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/game/store";
-import { getReferralLink, shareText } from "@/game/bridge";
+import { shareText } from "@/game/bridge";
 import { SFX } from "@/game/sound";
 import { ModalPortal } from "@/components/game/ModalPortal";
+import { useAuth } from "@/auth/AuthContext";
+
+const SHARE_URL = "https://t.me/GCMQBot";
 
 /**
  * Telegram-style invitation system.
@@ -12,12 +15,14 @@ import { ModalPortal } from "@/components/game/ModalPortal";
  */
 export function InviteButton() {
   const referralCredits = useGame(s => s.referralRefillCredits);
+  const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [link] = useState(() => getReferralLink());
+  const referralCode = profile?.referralCode || "GUEST";
+  const link = SHARE_URL;
 
   const inviteText =
-    `🎮 Play Gold Coin Merge Quest with me — earn FREE Gold Coin rewards every day! ${link}`;
+    `Join GOLD COIN MERGE QUEST and make free Tokens. Challenge your friend and top the leaderboard. Use referral Code: ${referralCode} ${SHARE_URL}`;
 
   async function handleShare() {
     SFX.click();
