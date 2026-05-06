@@ -109,12 +109,16 @@ export interface GameState {
   dailyFreeUses: DailyFreeUses;
 
   // ---- Refill system ----
-  /** Number of ad-based refills used today (resets at midnight). */
+  /** Number of ad-based refills used today (resets at midnight). Capped at DAILY_AD_REFILLS. */
   refillsUsedToday: number;
-  /** Permanent referral-earned refill credits. */
+  /** Permanent referral-earned refill credits (legacy). */
   referralRefillCredits: number;
+  /** Cumulative number of refills consumed from the referral pool (Firebase referralCount). */
+  referralRefillsUsed: number;
   /** Last referral count we awarded credits for (to detect new referrals). */
   lastReferralCountSeen: number;
+  /** Live referral pool size (mirrored from Firebase profile.referralCount). */
+  referralPoolSize: number;
 
   // Selection (used for Sell action)
   selectedCell: CellId | null;
@@ -236,7 +240,9 @@ function defaultState(): GameState {
     dailyFreeUses: freshDailyFreeUses(),
     refillsUsedToday: 0,
     referralRefillCredits: 0,
+    referralRefillsUsed: 0,
     lastReferralCountSeen: 0,
+    referralPoolSize: 0,
     selectedCell: null,
     tutorialStep: 0,
     muted: false,
@@ -280,6 +286,7 @@ interface SaveBlob {
   dailyFreeUses: DailyFreeUses;
   refillsUsedToday: number;
   referralRefillCredits: number;
+  referralRefillsUsed: number;
   lastReferralCountSeen: number;
   spawnIndex: number;
   nextSpawnAt: number;
@@ -305,6 +312,7 @@ function persist() {
     dailyFreeUses: s.dailyFreeUses,
     refillsUsedToday: s.refillsUsedToday,
     referralRefillCredits: s.referralRefillCredits,
+    referralRefillsUsed: s.referralRefillsUsed,
     lastReferralCountSeen: s.lastReferralCountSeen,
     spawnIndex: s.spawnIndex,
     nextSpawnAt: s.nextSpawnAt,
@@ -361,6 +369,7 @@ export function loadFromStorage() {
     selectedCell: null,
     // Reset daily-reset things at day rollover
     refillsUsedToday: isNewDay ? 0 : blob.refillsUsedToday,
+    referralRefillsUsed: blob.referralRefillsUsed ?? 0,
     dailyFreeUses: migratedDaily,
     // Spawn schedule resumes from saved cycle position so timers
     // *appear* to keep ticking even while the app was closed.
@@ -816,50 +825,80 @@ export function comboTick() {
 }
 
 // -------------------- refill --------------------
+/**
+ * Referral pool size — sourced from Firebase profile.referralCount.
+ * Stored on state so selector subscribers re-render on change.
+ */
+export function setReferralPoolSize(n: number) {
+  const v = Math.max(0, Math.floor(n || 0));
+  if (state.referralPoolSize === v) return;
+  set({ referralPoolSize: v });
+}
+export function getReferralPoolSize() { return state.referralPoolSize; }
+
 export interface RefillEligibility {
-  /** Refills used today (ad + referral combined). Cap = DAILY_REFILLS_MAX. */
+  /** Refill mode for the next press. */
+  mode: "referral" | "ad";
+  /** Referral pool total (Firebase referralCount). */
+  referralPool: number;
+  /** Refills consumed from the referral pool so far. */
+  referralUsed: number;
+  /** Refills remaining in the referral pool. */
+  referralLeft: number;
+  /** Ad-based refills used today (only meaningful in "ad" mode). */
+  adUsedToday: number;
+  /** Ad-based refills cap per day. */
+  adMaxPerDay: number;
+  /** Ad-based refills remaining today. */
+  adLeftToday: number;
+  /** True if a refill can be performed right now. */
+  canRefill: boolean;
+  /** True if the next refill needs a rewarded ad. */
+  needsAd: boolean;
+  /** Empty cells on the board. */
+  emptyCells: number;
+  // Legacy aliases (kept so older callers still type-check)
   refillsUsedToday: number;
   refillsMax: number;
   refillsLeftToday: number;
-  /** Permanent referral credits available. */
   referralCredits: number;
-  /** True if the player can refill at all right now. */
-  canRefill: boolean;
-  /** True if next refill should consume an ad. */
-  needsAd: boolean;
-  /** Number of currently empty board cells. */
-  emptyCells: number;
-  /**
-   * Refill priority for the NEXT refill:
-   *  - "referral"  → consumes a referral credit, no ad
-   *  - "ad"        → requires a rewarded ad
-   */
   nextRefillSource: "referral" | "ad";
 }
 
 export function getRefillEligibility(): RefillEligibility {
   const empty = state.board.filter(c => c == null).length;
-  const max = GAME_CONFIG.DAILY_REFILLS_MAX;
-  const used = state.refillsUsedToday;
-  const left = Math.max(0, max - used);
-  const referral = state.referralRefillCredits;
-  const next: RefillEligibility["nextRefillSource"] =
-    referral > 0 ? "referral" : "ad";
+  const pool = state.referralPoolSize;
+  const used = state.referralRefillsUsed;
+  const referralLeft = Math.max(0, pool - used);
+  const mode: "referral" | "ad" = referralLeft > 0 ? "referral" : "ad";
+  const adMax = GAME_CONFIG.DAILY_AD_REFILLS;
+  const adUsed = state.refillsUsedToday;
+  const adLeft = Math.max(0, adMax - adUsed);
+  const canRefill =
+    empty > 0 && (mode === "referral" ? referralLeft > 0 : adLeft > 0);
   return {
-    refillsUsedToday: used,
-    refillsMax: max,
-    refillsLeftToday: left,
-    referralCredits: referral,
-    canRefill: empty > 0 && left > 0,
-    needsAd: next === "ad",
+    mode,
+    referralPool: pool,
+    referralUsed: used,
+    referralLeft,
+    adUsedToday: adUsed,
+    adMaxPerDay: adMax,
+    adLeftToday: adLeft,
+    canRefill,
+    needsAd: mode === "ad",
     emptyCells: empty,
-    nextRefillSource: next,
+    // legacy aliases
+    refillsUsedToday: adUsed,
+    refillsMax: adMax,
+    refillsLeftToday: adLeft,
+    referralCredits: referralLeft,
+    nextRefillSource: mode,
   };
 }
 
 /**
  * Fill every empty cell with a new low-tier tile.
- * `source` controls which counter / credit is consumed (or none, for auto refills).
+ * `source` controls which counter is incremented (or none, for auto refills).
  */
 function doRefill(source: "ad" | "referral" | "auto", reason?: string): number {
   const board = state.board.slice();
@@ -874,10 +913,8 @@ function doRefill(source: "ad" | "referral" | "auto", reason?: string): number {
   if (placed === 0) return 0;
   set(s => ({
     board,
-    refillsUsedToday: source === "auto" ? s.refillsUsedToday : s.refillsUsedToday + 1,
-    referralRefillCredits: source === "referral"
-      ? Math.max(0, s.referralRefillCredits - 1)
-      : s.referralRefillCredits,
+    refillsUsedToday: source === "ad" ? s.refillsUsedToday + 1 : s.refillsUsedToday,
+    referralRefillsUsed: source === "referral" ? s.referralRefillsUsed + 1 : s.referralRefillsUsed,
   }));
   SFX.reward();
   pushBanner({
@@ -899,18 +936,18 @@ export function doAutoRefill(reason: string): number {
 /** Use a refill, paid for by a rewarded ad. Caller must have already shown the ad. */
 export function consumeAdRefill(): number {
   const e = getRefillEligibility();
-  if (!e.canRefill) return 0;
+  if (!e.canRefill || e.mode !== "ad") return 0;
   return doRefill("ad");
 }
 
-/** Use one referral refill credit. */
+/** Use one referral-pool refill. */
 export function consumeReferralRefill(): number {
   const e = getRefillEligibility();
-  if (!e.canRefill || e.referralCredits <= 0) return 0;
+  if (!e.canRefill || e.mode !== "referral") return 0;
   return doRefill("referral");
 }
 
-/** Back-compat: extra ad refill behaves the same as `consumeAdRefill` now. */
+/** Back-compat alias. */
 export function consumeExtraAdRefill(): number {
   return consumeAdRefill();
 }

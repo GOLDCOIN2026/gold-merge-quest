@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Zap, Sparkles, Repeat, Loader2, Tv } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,7 @@ import {
   consumeReferralRefill,
   getRefillEligibility,
   getSpeedBoostEligibility,
+  setReferralPoolSize,
   selectors,
 } from "@/game/store";
 import { showRewardedAd } from "@/game/bridge";
@@ -18,28 +19,34 @@ import { useAuth } from "@/auth/AuthContext";
 /**
  * Bottom action bar — Refill + 2× Speed Boost.
  *
- * Refill rules:
- *   - Max 2 uses per 24 hours.
- *   - If referral credit is available → consumes credit (no ad).
- *   - Otherwise → requires a rewarded ad.
- *   - "Refill (X)" label, where X = referral credits remaining.
+ * Refill rules (Firebase referralCount-driven pool):
+ *   - referralCount > 0 → free refills until pool is exhausted (used/referralCount).
+ *   - When referralUsed reaches referralCount → switch to ad-based:
+ *       max 2 rewarded-ad refills per 24h.
  *
  * Speed boost rules:
  *   - Max 2 uses per 24 hours.
- *   - Always requires a rewarded ad (no free use).
+ *   - Always requires a rewarded ad.
  *   - Boosts spawn rate to 1.5s for 1 minute.
  */
 export function ActionBar() {
   const phase = useGame(s => s.phase);
   const speedActive = useGame(selectors.speedActive);
   const board = useGame(s => s.board);
-  // Subscribe to refill counters so the button label re-renders.
+  // Subscribe so the button re-renders when counters change.
+  useGame(s => s.referralRefillsUsed);
   useGame(s => s.refillsUsedToday);
-  useGame(s => s.referralRefillCredits);
+  useGame(s => s.referralPoolSize);
   useGame(s => s.dailyFreeUses);
   const { profile } = useAuth();
   const [adLoading, setAdLoading] = useState<"speed" | "refill" | null>(null);
   const [boostExhausted, setBoostExhausted] = useState(false);
+  const [pulse, setPulse] = useState(false);
+
+  // Mirror Firebase referralCount → store referral pool.
+  useEffect(() => {
+    setReferralPoolSize(profile?.referralCount ?? 0);
+  }, [profile?.referralCount]);
 
   const disabled = phase !== "playing";
   const empty = board.filter(c => c == null).length;
@@ -71,39 +78,46 @@ export function ActionBar() {
   async function handleRefill() {
     if (disabled || adLoading) return;
     if (empty === 0) { SFX.error(); return; }
-    if (e.refillsLeftToday <= 0) { SFX.error(); return; }
+    if (!e.canRefill) { SFX.error(); return; }
     SFX.click();
 
-    if (e.nextRefillSource === "referral") {
-      consumeReferralRefill();
+    if (e.mode === "referral") {
+      const placed = consumeReferralRefill();
+      if (placed > 0) { setPulse(true); setTimeout(() => setPulse(false), 350); }
       return;
     }
+    // ad mode — must succeed before granting refill
     setAdLoading("refill");
     const ok = await showRewardedAd();
     setAdLoading(null);
     if (!ok) { SFX.error(); return; }
-    consumeAdRefill();
+    const placed = consumeAdRefill();
+    if (placed > 0) { setPulse(true); setTimeout(() => setPulse(false), 350); }
   }
 
-  // Speed-button label helper
+  // ----- Labels -----
+  const refillTopLabel =
+    e.mode === "referral"
+      ? `${e.referralPool} Refill`
+      : `Refill`;
+
+  const refillSubLabel =
+    empty === 0
+      ? "Board full"
+      : e.mode === "referral"
+        ? `${e.referralUsed}/${e.referralPool} used`
+        : e.adLeftToday > 0
+          ? `Watch ad · ${e.adUsedToday}/${e.adMaxPerDay} used`
+          : "Daily limit reached";
+
+  const refillBtnDisabled =
+    disabled || adLoading !== null || empty === 0 || !e.canRefill;
+
   const speedSubLabel = speedActive
     ? "Active"
     : sb.adUsesLeft > 0
       ? `Watch ad · ${sb.adUsesUsed}/${sb.adUsesMax} used`
       : "Daily limit reached";
-
-  // Refill label helper
-  const refillSubLabel =
-    empty === 0
-      ? "Board full"
-      : e.refillsLeftToday <= 0
-        ? "Daily limit reached"
-        : e.nextRefillSource === "referral"
-          ? `Use credit · ${e.refillsUsedToday}/${e.refillsMax} used`
-          : `Watch ad · ${e.refillsUsedToday}/${e.refillsMax} used`;
-
-  const refillBtnDisabled =
-    disabled || adLoading !== null || empty === 0 || e.refillsLeftToday <= 0;
   const speedBtnDisabled =
     disabled || speedActive || adLoading !== null || sb.adUsesLeft <= 0;
 
@@ -114,14 +128,14 @@ export function ActionBar() {
         <Button
           onClick={handleRefill}
           disabled={refillBtnDisabled}
-          className="btn-gold h-16 text-sm font-extrabold rounded-2xl flex-col gap-0.5 relative overflow-hidden transition-all disabled:opacity-50"
+          className={`btn-gold h-16 text-sm font-extrabold rounded-2xl flex-col gap-0.5 relative overflow-hidden transition-all duration-300 disabled:opacity-50 ${pulse ? "scale-[1.04] shadow-gold" : ""}`}
         >
           {adLoading === "refill" ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <Repeat className="h-5 w-5" />
+            <Repeat className={`h-5 w-5 transition-transform ${pulse ? "rotate-180" : ""}`} />
           )}
-          <span>Refill ({profile?.referralCount ?? e.referralCredits})</span>
+          <span>{refillTopLabel}</span>
           <span className="text-[10px] font-semibold opacity-90">{refillSubLabel}</span>
         </Button>
 
@@ -144,7 +158,6 @@ export function ActionBar() {
         </Button>
       </div>
 
-      {/* Speed boost daily-limit modal */}
       {boostExhausted && (
         <div
           className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-5 animate-fade-in"
