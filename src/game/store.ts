@@ -238,6 +238,7 @@ function defaultState(): GameState {
     dailyFreeUses: freshDailyFreeUses(),
     refillsUsedToday: 0,
     referralRefillCredits: 0,
+    referralRefillsUsed: 0,
     lastReferralCountSeen: 0,
     selectedCell: null,
     tutorialStep: 0,
