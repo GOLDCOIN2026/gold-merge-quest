@@ -99,18 +99,19 @@ export function InviteButton() {
             </div>
 
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Your referral link
+              Your referral code
             </label>
-            <div className="mt-1 mb-3 panel-gold rounded-xl px-3 py-2 flex items-center gap-2">
-              <span className="flex-1 text-xs font-mono text-gold-200 truncate">{link}</span>
+            <div className="mt-1 mb-2 panel-gold rounded-xl px-3 py-2 flex items-center gap-2">
+              <span className="flex-1 text-sm font-mono font-bold text-gold tracking-widest">{referralCode}</span>
               <button
                 onClick={handleCopy}
                 className="h-8 w-8 rounded-lg bg-gradient-gold text-primary-foreground flex items-center justify-center shadow-gold shrink-0"
-                aria-label="Copy link"
+                aria-label="Copy"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </button>
             </div>
+            <div className="mb-3 text-[11px] text-muted-foreground text-center font-mono truncate">{SHARE_URL}</div>
 
             <div className="grid grid-cols-2 gap-2">
               <Button
