@@ -46,8 +46,8 @@ export function InviteButton() {
 
   function openTelegram() {
     SFX.click();
-    const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(
-      "🎮 Play Gold Coin Merge Quest with me — earn FREE Gold Coin rewards every day!"
+    const url = `https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(
+      `Join GOLD COIN MERGE QUEST and make free Tokens. Challenge your friend and top the leaderboard. Use referral Code: ${referralCode}`
     )}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
