@@ -867,7 +867,7 @@ export interface RefillEligibility {
 
 export function getRefillEligibility(): RefillEligibility {
   const empty = state.board.filter(c => c == null).length;
-  const pool = referralPoolSize;
+  const pool = state.referralPoolSize;
   const used = state.referralRefillsUsed;
   const referralLeft = Math.max(0, pool - used);
   const mode: "referral" | "ad" = referralLeft > 0 ? "referral" : "ad";
