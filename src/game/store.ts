@@ -117,6 +117,8 @@ export interface GameState {
   referralRefillsUsed: number;
   /** Last referral count we awarded credits for (to detect new referrals). */
   lastReferralCountSeen: number;
+  /** Live referral pool size (mirrored from Firebase profile.referralCount). */
+  referralPoolSize: number;
 
   // Selection (used for Sell action)
   selectedCell: CellId | null;
