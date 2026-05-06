@@ -309,6 +309,7 @@ function persist() {
     dailyFreeUses: s.dailyFreeUses,
     refillsUsedToday: s.refillsUsedToday,
     referralRefillCredits: s.referralRefillCredits,
+    referralRefillsUsed: s.referralRefillsUsed,
     lastReferralCountSeen: s.lastReferralCountSeen,
     spawnIndex: s.spawnIndex,
     nextSpawnAt: s.nextSpawnAt,
