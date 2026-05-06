@@ -109,10 +109,12 @@ export interface GameState {
   dailyFreeUses: DailyFreeUses;
 
   // ---- Refill system ----
-  /** Number of ad-based refills used today (resets at midnight). */
+  /** Number of ad-based refills used today (resets at midnight). Capped at DAILY_AD_REFILLS. */
   refillsUsedToday: number;
-  /** Permanent referral-earned refill credits. */
+  /** Permanent referral-earned refill credits (legacy). */
   referralRefillCredits: number;
+  /** Cumulative number of refills consumed from the referral pool (Firebase referralCount). */
+  referralRefillsUsed: number;
   /** Last referral count we awarded credits for (to detect new referrals). */
   lastReferralCountSeen: number;
 
