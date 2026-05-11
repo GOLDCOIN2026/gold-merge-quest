@@ -119,11 +119,18 @@ const Index = () => {
       )}
 
       {/* Ad block above missions */}
-      {phase !== "menu" && (
-        <section className="z-10 animate-fade-in">
-          <AdSlot className="bg-secondary/20 border border-gold-700/20" />
-        </section>
-      )}
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7453907403877295"
+     crossorigin="anonymous"></script>
+<!-- Bottom -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7453907403877295"
+     data-ad-slot="7352202986"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
 
       {/* Missions */}
       {phase !== "menu" && (
