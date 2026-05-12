@@ -121,7 +121,7 @@ const Index = () => {
       {/* Ad block above missions */}
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7453907403877295"
      crossorigin="anonymous"></script>
-<!-- Bottom -->
+{/* Bottom */}
 <ins class="adsbygoogle"
      style="display:block"
      data-ad-client="ca-pub-7453907403877295"
