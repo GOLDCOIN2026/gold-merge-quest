@@ -25,42 +25,67 @@ import {
 import { setMuted as setSfxMuted, unlockAudio } from "@/game/sound";
 
 const Index = () => {
-  const muted = useGame(s => s.muted);
-  const phase = useGame(s => s.phase);
+  const muted = useGame((s) => s.muted);
+  const phase = useGame((s) => s.phase);
 
-  useEffect(() => { loadFromStorage(); }, []);
-  useEffect(() => { setSfxMuted(muted); }, [muted]);
+  useEffect(() => {
+    loadFromStorage();
+  }, []);
+
+  useEffect(() => {
+    setSfxMuted(muted);
+  }, [muted]);
 
   useEffect(() => {
     const spawn = window.setInterval(autoSpawnTick, 250);
     const combo = window.setInterval(comboTick, 500);
-    return () => { clearInterval(spawn); clearInterval(combo); };
+
+    return () => {
+      clearInterval(spawn);
+      clearInterval(combo);
+    };
   }, []);
 
   useEffect(() => {
-    const onTouch = () => { unlockAudio(); window.removeEventListener("pointerdown", onTouch); };
+    const onTouch = () => {
+      unlockAudio();
+      window.removeEventListener("pointerdown", onTouch);
+    };
+
     window.addEventListener("pointerdown", onTouch);
-    return () => window.removeEventListener("pointerdown", onTouch);
+
+    return () => {
+      window.removeEventListener("pointerdown", onTouch);
+    };
   }, []);
 
   useEffect(() => {
     const onHide = () => persistNow();
     const onShow = () => syncReferralCredits();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        persistNow();
+      } else {
+        onShow();
+      }
+    };
+
     window.addEventListener("pagehide", onHide);
     window.addEventListener("beforeunload", onHide);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") persistNow();
-      else onShow();
-    });
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
       window.removeEventListener("pagehide", onHide);
       window.removeEventListener("beforeunload", onHide);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
 
   return (
     <main className="relative min-h-screen w-full px-3 py-3 pb-24 max-w-[640px] mx-auto flex flex-col gap-3">
-      {/* Header — title left, leaderboard + auth right */}
+      
+      {/* Header */}
       {phase !== "menu" && (
         <header className="sticky top-0 -mx-3 px-3 pt-3 pb-3 z-40 backdrop-blur-md bg-background/70 animate-fade-in border-b border-gold-700/20">
           <div className="flex items-center justify-between gap-3">
@@ -68,10 +93,12 @@ const Index = () => {
               <span className="block text-lg sm:text-xl font-extrabold text-gold drop-shadow-[0_2px_8px_hsl(43_90%_55%/0.35)]">
                 GOLD COIN
               </span>
+
               <span className="block text-xs sm:text-sm font-bold text-gold-200/90">
                 MERGE QUEST
               </span>
             </h1>
+
             <div className="flex items-center gap-1.5 shrink-0">
               <LeaderboardButton />
               <AuthButtons />
@@ -80,7 +107,7 @@ const Index = () => {
         </header>
       )}
 
-      {/* XP / Level + spawn status — glass container */}
+      {/* HUD */}
       {phase !== "menu" && (
         <section className="z-20 animate-fade-in">
           <HUD />
@@ -94,54 +121,52 @@ const Index = () => {
         </section>
       )}
 
-      {/* Claim Reward — prominent CTA */}
+      {/* Claim Reward */}
       {phase !== "menu" && (
         <section className="z-20 animate-fade-in">
           <ClaimRewardButton />
         </section>
       )}
 
-      {/* Action bar */}
+      {/* Action Bar */}
       {phase !== "menu" && (
-        <section className="z-20 animate-fade-in"><ActionBar /></section>
+        <section className="z-20 animate-fade-in">
+          <ActionBar />
+        </section>
       )}
 
-      {/* Share + Diamonds — single horizontal row */}
+      {/* Invite + Coins */}
       {phase !== "menu" && (
         <section className="z-20 animate-fade-in grid grid-cols-2 gap-2">
           <div className="panel-gold rounded-2xl h-12 flex items-center justify-center">
             <InviteButton />
           </div>
+
           <div className="panel-gold rounded-2xl h-12 flex items-center justify-center">
             <TokenCounter />
           </div>
         </section>
       )}
 
-      {/* Ad block above missions */}
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7453907403877295"
-     crossorigin="anonymous"></script>
-{/* Bottom */}
-<ins class="adsbygoogle"
-     style="display:block"
-     data-ad-client="ca-pub-7453907403877295"
-     data-ad-slot="7352202986"
-     data-ad-format="auto"
-     data-full-width-responsive="true"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
+      {/* Ad Block */}
+      {phase !== "menu" && (
+        <section className="z-10 animate-fade-in">
+          <AdSlot />
+        </section>
+      )}
 
       {/* Missions */}
       {phase !== "menu" && (
-        <section className="z-10 animate-fade-in"><MissionsPanel /></section>
+        <section className="z-10 animate-fade-in">
+          <MissionsPanel />
+        </section>
       )}
 
       <BannerStack />
       <Tutorial />
       <SellAction />
 
-      {/* Full-width "How to Play" pinned to bottom */}
+      {/* Bottom Info Button */}
       {phase !== "menu" && (
         <div className="fixed left-0 right-0 bottom-0 z-30 px-3 pb-3 pt-2 bg-gradient-to-t from-background via-background/90 to-transparent">
           <div className="max-w-[640px] mx-auto">
@@ -150,6 +175,7 @@ const Index = () => {
         </div>
       )}
 
+      {/* Main Menu */}
       {phase === "menu" && <MainMenu />}
     </main>
   );
